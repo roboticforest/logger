@@ -6,6 +6,17 @@
 
 namespace DV {
 
+    // TODO: Prevent color format codes from being inserted into the output stream when the
+    // stream is not attached to a terminal. Do this during logger construction.
+    // TEMP CODE! Proof of concept! This code works!
+    /*
+    if ( _out.rdbuf() == std::cout.rdbuf() ) {
+        _out << "CONSOLE STREAM:\t";
+    } else {
+        _out << "FILE STREAM:\t";
+    }
+    */
+
     // TODO: Setup variables for storing these values for select uses. For example: create an
     // infoColor variable that can be set during logger construction and use that instead of using
     // these strings directly from this namespace.
@@ -42,18 +53,20 @@ namespace DV {
 
     void Logger::buildHeader(LogLevel level) {
 
-        // TODO: Prevent color format codes from being inserted into the output stream when the
-        // stream is not attached to a terminal. Do this during logger construction.
-        // TEMP CODE! Proof of concept! This code works!
-        /*
-        if ( _out.rdbuf() == std::cout.rdbuf() ) {
-            _out << "CONSOLE STREAM:\t";
-        } else {
-            _out << "FILE STREAM:\t";
-        }
-        */
+        // Usage of std::chrono does not improve the following code. std::chrono is built more for timing things than
+        // for handling dates. In fact, std::chrono:system_clock:now() returns the exact same value as std::time()
+        // which should be the number seconds that have passed since a set epoch. Then if you want to print out that
+        // time the only option is to convert it to a std::time_t and use the C formatting functions to print
+        // something nice.
 
-        // Append a Time Stamp.
+        // As for the use of clock_t for measuring sub-second times, on most (if not all) modern systems this should
+        // be a long int of 64 bits in size, and the CLOCKS_PER_SEC macro should have a value of 1,000,000
+        // (microseconds). If you do the math, that means that this signed type will overflow into the negative in
+        // just under 230,000 years. On older systems this may be an issue (maybe not) as the clock_t could be a 32
+        // bit signed type with CLOCKS_PER_SEC set to 1,000 (milliseconds) so this type would overflow into the
+        // negative in just under 25 days of run time for whatever application it is used in.
+
+        // Get the current time.
         std::time_t curTime  = std::time(nullptr);
         std::clock_t curTick = std::clock();
 
