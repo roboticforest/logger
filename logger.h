@@ -8,73 +8,66 @@
 namespace DV {
 
     class Logger {
-      public:
-        explicit Logger(const char * name, std::ostream & os);
+    public:
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        ///// Constructors and destructors
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        explicit Logger(const char* name, std::ostream& os);
         ~Logger();
 
         // NOT movable.
-        Logger(Logger && rhs) = delete;
-        Logger & operator=(Logger && rhs) = delete;
+        Logger(Logger&& rhs) = delete;
+        Logger& operator=(Logger&& rhs) = delete;
 
         // NOT copyable.
-        Logger(const Logger & rhs) = delete;
-        Logger & operator=(const Logger & rhs) = delete;
+        Logger(const Logger& rhs) = delete;
+        Logger& operator=(const Logger& rhs) = delete;
 
-        template <typename... Message>
-        void info(Message... msg) {
-            this->assemble(LogLevel::info, msg...);
-        }
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        ///// Public logging functions.
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        template <typename... Message>
-        void warn(Message... msg) {
-            this->assemble(LogLevel::warn, msg...);
-        }
+        template<typename... Message> void debug(Message... msg) { this->assemble(LogLevel::debug, msg...); }
+        template<typename... Message> void error(Message... msg) { this->assemble(LogLevel::error, msg...); }
+        template<typename... Message> void fatal(Message... msg) { this->assemble(LogLevel::fatal, msg...); }
+        template<typename... Message> void info(Message... msg) { this->assemble(LogLevel::info, msg...); }
+        template<typename... Message> void trace(Message... msg) { this->assemble(LogLevel::trace, msg...); }
+        template<typename... Message> void warn(Message... msg) { this->assemble(LogLevel::warn, msg...); }
 
-        template <typename... Message>
-        void error(Message... msg) {
-            this->assemble(LogLevel::error, msg...);
-        }
-
-        template <typename... Message>
-        void fatal(Message... msg) {
-            this->assemble(LogLevel::fatal, msg...);
-        }
-
-        template <typename... Message>
-        void debug(Message... msg) {
-            this->assemble(LogLevel::debug, msg...);
-        }
-
-        template <typename... Message>
-        void trace(Message... msg) {
-            this->assemble(LogLevel::trace, msg...);
-        }
-
-      private:
+    private:
         // TODO: Revisit pImpl. See if everything but the buffer can be hidden.
-        const char * _name;
-        std::ostream & _out;
-        std::stringstream _buffer;
+        const char* _name;          // Name of the logger.
+        std::ostream& _out;         // Output stream
+        std::stringstream _buffer;  // Buffer for assembling the finished message to output.
 
         enum class LogLevel { info, warn, error, fatal, debug, trace };
 
-        template <typename Message>
-        void assemble(Message msg) {
-            _buffer << msg;
+        template<typename... Message>
+        void assemble(LogLevel logLevel, Message... msg)
+        {
+            this->buildHeader(logLevel);    // Add a header to the output buffer.
+            this->assemble(msg...);         // Add all message parts (via 1 of 2 assembly helpers) to the buffer.
+            this->write();                  // Write the finished message buffer to the output stream.
         }
-        template <typename First, typename... Rest>
-        void assemble(First first, Rest... rest) {
+
+        // First message assembly helper for when there are two or more parts.
+        template<typename First, typename... Rest>
+        void assemble(First first, Rest... rest)
+        {
             _buffer << first << ' ';
             this->assemble(rest...);
         }
-        template <typename... Message>
-        void assemble(LogLevel logLevel, Message... msg) {
-            this->buildHeader(logLevel);
-            this->assemble(msg...);
-            this->write();
-        }
 
+        // Second message assembly helper for when there is only one part.
+        template<typename Message>
+        void assemble(Message msg) { _buffer << msg; }
+
+        // First part of message assembly. Adds a header to the message based on the given logging level.
         void buildHeader(LogLevel);
+
+        // Output the fully assembled message to the output stream.
         void write();
     };
 }

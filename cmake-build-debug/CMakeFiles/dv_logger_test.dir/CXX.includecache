@@ -24,3 +24,11 @@ sstream
 string
 -
 
+/home/david/Code/logger/main.cpp
+iostream
+-
+fstream
+-
+logger.h
+/home/david/Code/logger/logger.h
+
