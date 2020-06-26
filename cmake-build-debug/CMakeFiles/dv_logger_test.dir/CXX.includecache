@@ -6,6 +6,18 @@
 
 #IncludeRegexTransform: 
 
+/home/david/Code/logger/logger.cpp
+logger.h
+/home/david/Code/logger/logger.h
+ctime
+-
+sstream
+-
+string
+-
+chrono
+-
+
 /home/david/Code/logger/logger.h
 iostream
 -
@@ -13,14 +25,4 @@ sstream
 -
 string
 -
-
-/home/david/Code/logger/main.cpp
-iostream
--
-fstream
--
-ctime
--
-logger.h
-/home/david/Code/logger/logger.h
 
