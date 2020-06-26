@@ -9,8 +9,16 @@ namespace DV {
 
     class Logger {
       public:
-        Logger(const char * name, std::ostream & os);
+        explicit Logger(const char * name, std::ostream & os);
         ~Logger();
+
+        // NOT movable.
+        Logger(Logger && rhs) = delete;
+        Logger & operator=(Logger && rhs) = delete;
+
+        // NOT copyable.
+        Logger(const Logger & rhs) = delete;
+        Logger & operator=(const Logger & rhs) = delete;
 
         template <typename... Message>
         void info(Message... msg) {
