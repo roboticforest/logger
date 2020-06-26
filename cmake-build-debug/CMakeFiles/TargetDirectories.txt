@@ -1,0 +1,3 @@
+/home/david/Code/logger/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/david/Code/logger/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/david/Code/logger/cmake-build-debug/CMakeFiles/dv_logger_test.dir
