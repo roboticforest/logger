@@ -7,21 +7,11 @@
 
 namespace DV {
 
-    // TODO: Prevent color format codes from being inserted into the output stream when the
-    // stream is not attached to a terminal. Do this during logger construction.
-    // TEMP CODE! Proof of concept! This code works!
-    /*
-    if ( _out.rdbuf() == std::cout.rdbuf() ) {
-        _out << "CONSOLE STREAM:\t";
-    } else {
-        _out << "FILE STREAM:\t";
-    }
-    */
+    // ----------------------------------------------------------------------------------------------------
+    // Unix/Linux terminal colors.
+    // ----------------------------------------------------------------------------------------------------
 
-    // TODO: Setup variables for storing these values for select uses. For example: create an
-    // infoColor variable that can be set during logger construction and use that instead of using
-    // these strings directly from this namespace.
-    namespace ConsoleColor {
+    namespace TerminalColor {
         static const char* const black      = "\u001B[30m";
         static const char* const red        = "\u001B[31m";
         static const char* const green      = "\u001B[32m";
@@ -41,19 +31,37 @@ namespace DV {
         static const char* const bgWhite    = "\u001B[47m";
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    ///// Logger Public Interface Implementation
-    ////////////////////////////////////////////////////////////////////////////////
+    // Simple stream manipulators to change the terminal output colors.
+    std::ostream& infoColor(std::ostream& os) { os << TerminalColor::blue; return os; }
+    std::ostream& warnColor(std::ostream& os) { os << TerminalColor::yellow; return os; }
+    std::ostream& errorColor(std::ostream& os) { os << TerminalColor::red; return os; }
+    std::ostream& fatalColor(std::ostream& os) { os << TerminalColor::black << TerminalColor::bgRed; return os; }
+    std::ostream& debugColor(std::ostream& os) { os << TerminalColor::green; return os; }
+    std::ostream& traceColor(std::ostream& os) { os << TerminalColor::reset; return os; }
+    std::ostream& resetColor(std::ostream& os) { os << TerminalColor::reset; return os; }
+
+    // ----------------------------------------------------------------------------------------------------
+    // Logger Public Interface Implementation
+    // ----------------------------------------------------------------------------------------------------
 
     Logger::Logger(const char* name, std::ostream& os)
-            :_name(name), _out(os) { }
+            :_name(name), _out(os)
+    {
+        _outputColorText = _out.rdbuf() == std::cout.rdbuf();
+    }
 
-    Logger::~Logger() { }
+    Logger::~Logger() = default;
 
-    ////////////////////////////////////////////////////////////////////////////////
-    ///// Logger Private Interface
-    ////////////////////////////////////////////////////////////////////////////////
+    // ----------------------------------------------------------------------------------------------------
+    // Logger Private Interface
+    // ----------------------------------------------------------------------------------------------------
 
+    /**
+     * Assembles the timestamp and log level tags at the start of a logged message.
+     * @param level
+     * — The kind of logging being done. (info, warning, error, etc.) This effects text coloring if logging is being
+     * done to a terminal.
+     */
     void Logger::buildHeader(LogLevel level)
     {
         // Get the current time.
@@ -75,20 +83,36 @@ namespace DV {
         // Append logger name and level.
         _buffer << '[';
         _buffer << _name << ':';
-        switch (level) {
-        case LogLevel::info: _buffer << ConsoleColor::blue << "INFO" << ConsoleColor::reset; break;
-        case LogLevel::warn: _buffer << ConsoleColor::yellow << "WARN" << ConsoleColor::reset; break;
-        case LogLevel::error: _buffer << ConsoleColor::red << "ERROR" << ConsoleColor::reset; break;
-        case LogLevel::fatal: _buffer << ConsoleColor::black << ConsoleColor::bgRed << "FATAL" << ConsoleColor::reset; break;
-        case LogLevel::debug: _buffer << ConsoleColor::green << "DEBUG" << ConsoleColor::reset; break;
-        case LogLevel::trace: _buffer << "TRACE"; break;
-        default: break;
+        if (_outputColorText) {
+            switch (level) {                                                                // Default Colors
+                case LogLevel::info:  _buffer << infoColor  << "INFO"  << resetColor; break;// Blue
+                case LogLevel::warn:  _buffer << warnColor  << "WARN"  << resetColor; break;// Yellow
+                case LogLevel::error: _buffer << errorColor << "ERROR" << resetColor; break;// Red
+                case LogLevel::fatal: _buffer << fatalColor << "FATAL" << resetColor; break;// Black on Red
+                case LogLevel::debug: _buffer << debugColor << "DEBUG" << resetColor; break;// Green
+                case LogLevel::trace: _buffer << traceColor << "TRACE" << resetColor; break;// Default terminal color.
+                default: break;
+            }
+        } else {
+            switch (level) {
+            case LogLevel::info:  _buffer << "INFO"; break;
+            case LogLevel::warn:  _buffer << "WARN"; break;
+            case LogLevel::error: _buffer << "ERROR"; break;
+            case LogLevel::fatal: _buffer << "FATAL"; break;
+            case LogLevel::debug: _buffer << "DEBUG"; break;
+            case LogLevel::trace: _buffer << "TRACE"; break;
+            default: break;
+            }
         }
         _buffer << "]\t";
     }
 
     // TODO: Is this thread safe? Do I need to lock a mutex? Supposedly cout is already thread safe,
     // but every example I've found says that you need to lock a mutex around output operations.
+
+    // TODO: Look into interlacing problems. From a recent Googling I found that cout should be thread safe, but only
+    // for each character, which is kind of ridiculous because most characters are one byte and everything works on
+    // individual bytes.
     void Logger::write() { _out << _buffer.rdbuf() << std::endl; }
 
 }

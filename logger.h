@@ -10,9 +10,9 @@ namespace DV {
     class Logger {
     public:
 
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-        ///// Constructors and destructors
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // ----------------------------------------------------------------------------------------------------
+        // Constructors and destructors
+        // ----------------------------------------------------------------------------------------------------
 
         explicit Logger(const char* name, std::ostream& os);
         ~Logger();
@@ -25,19 +25,19 @@ namespace DV {
         Logger(const Logger& rhs) = delete;
         Logger& operator=(const Logger& rhs) = delete;
 
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-        ///// Public logging functions.
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // ----------------------------------------------------------------------------------------------------
+        // Public logging functions.
+        // ----------------------------------------------------------------------------------------------------
 
-        template<typename... Message> void debug(Message... msg) { this->assemble(LogLevel::debug, msg...); }
-        template<typename... Message> void error(Message... msg) { this->assemble(LogLevel::error, msg...); }
-        template<typename... Message> void fatal(Message... msg) { this->assemble(LogLevel::fatal, msg...); }
-        template<typename... Message> void info(Message... msg) { this->assemble(LogLevel::info, msg...); }
-        template<typename... Message> void trace(Message... msg) { this->assemble(LogLevel::trace, msg...); }
-        template<typename... Message> void warn(Message... msg) { this->assemble(LogLevel::warn, msg...); }
+        template<typename... Message> void debug (Message... msg) { this->assemble(LogLevel::debug, msg...); }
+        template<typename... Message> void error (Message... msg) { this->assemble(LogLevel::error, msg...); }
+        template<typename... Message> void fatal (Message... msg) { this->assemble(LogLevel::fatal, msg...); }
+        template<typename... Message> void info  (Message... msg) { this->assemble(LogLevel::info,  msg...); }
+        template<typename... Message> void trace (Message... msg) { this->assemble(LogLevel::trace, msg...); }
+        template<typename... Message> void warn  (Message... msg) { this->assemble(LogLevel::warn,  msg...); }
 
     private:
-        // TODO: Revisit pImpl. See if everything but the buffer can be hidden.
+        // TODO: Revisit pImpl. Figure out what can and can't be hidden while preserving the variadic templates.
         const char* _name;          // Name of the logger.
         std::ostream& _out;         // Output stream
         std::stringstream _buffer;  // Buffer for assembling the finished message to output.
@@ -69,6 +69,10 @@ namespace DV {
 
         // Output the fully assembled message to the output stream.
         void write();
+
+        bool _outputColorText;
+
+        //const char* const infoColor();
     };
 }
 
