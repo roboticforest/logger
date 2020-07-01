@@ -31,7 +31,7 @@ int main() {
     termLog.warn(message, 5, 3.14, 'a', "b c", &message);
 
     //Log to a file stream.
-    std::ofstream file("log.txt");
+    std::ofstream file("file_output.log");
     DV::Logger fileLog("File Output", file);
 
     fileLog.debug("A single string literal argument to the function.");

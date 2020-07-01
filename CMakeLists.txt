@@ -1,11 +1,15 @@
 # Specify which version of CMake we're using.
 cmake_minimum_required(VERSION 3.16)
 
+# Set the project name.
+project(logger)
+
 # Choose the C++ language standard the compiler should use.
 set(CMAKE_CXX_STANDARD 17)
 
-# Set the project name.
-project(dv_logger_test)
+# Build the logging library.
+add_library(dvlogger STATIC logger.cpp)
 
-# Assemble executable.
-add_executable(dv_logger_test main.cpp logger.cpp)
+# Build the executable.
+add_executable(logger_test main.cpp)
+target_link_libraries(logger_test PUBLIC dvlogger)
