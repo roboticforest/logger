@@ -2,11 +2,18 @@
 #include <fstream>
 
 #include "logger.h"
+#include "logger_version.h"
 
 int main() {
 
     // Log to the standard character out stream.
     DV::Logger termLog("User Terminal", std::cout);
+    termLog.info("Testing the logger library. Version:",
+            LOGGER_VERSION_MAJOR, ".",
+            LOGGER_VERSION_MINOR, ".",
+            LOGGER_VERSION_PATCH, ".",
+            LOGGER_VERSION_TWEAK
+    );
 
     termLog.debug("A single string literal argument to the function.");
     termLog.error("A single string literal argument to the function.");
@@ -33,6 +40,12 @@ int main() {
     //Log to a file stream.
     std::ofstream file("file_output.log");
     DV::Logger fileLog("File Output", file);
+    fileLog.info("Testing the logger library. Version:",
+            LOGGER_VERSION_MAJOR, ".",
+            LOGGER_VERSION_MINOR, ".",
+            LOGGER_VERSION_PATCH, ".",
+            LOGGER_VERSION_TWEAK
+    );
 
     fileLog.debug("A single string literal argument to the function.");
     fileLog.error("A single string literal argument to the function.");

@@ -14,6 +14,8 @@ namespace DV {
         // Constructors and destructors
         // ----------------------------------------------------------------------------------------------------
 
+        // TODO: Make a second constructor that takes in additional streams so that logging output can be tee'd.
+        // TODO: Implement the ability to handle teeing output!
         explicit Logger(const char* name, std::ostream& os);
         ~Logger();
 

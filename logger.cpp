@@ -107,12 +107,10 @@ namespace DV {
         _buffer << "]\t";
     }
 
-    // TODO: Is this thread safe? Do I need to lock a mutex? Supposedly cout is already thread safe,
-    // but every example I've found says that you need to lock a mutex around output operations.
-
-    // TODO: Look into interlacing problems. From a recent Googling I found that cout should be thread safe, but only
-    // for each character, which is kind of ridiculous because most characters are one byte and everything works on
-    // individual bytes.
+    // TODO: Make this "thread safe", meaning ensure that the whole message is written at once without
+    // getting interlaced with other messages. This *should* work as is because an entire buffer is being
+    // output all at once, but a mutex lock may still be needed, particularly because something might happen
+    // between output of the buffer and the endl.
     void Logger::write() { _out << _buffer.rdbuf() << std::endl; }
 
 }
