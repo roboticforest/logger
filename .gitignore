@@ -8,3 +8,6 @@ logger_version.h
 # Manually created install bundles
 dvlogger*-Debug/*
 dvlogger*-Release/*
+
+# Documentation
+doc/*

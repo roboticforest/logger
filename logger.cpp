@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @author David Vitez (AKA: Robotic Forest)
+ * @copyright All rights reserved © 2020 David Vitez
+ */
+
 #include "logger.h"
 
 #include <ctime>
@@ -11,6 +17,9 @@ namespace DV {
     // Unix/Linux terminal colors.
     // ----------------------------------------------------------------------------------------------------
 
+    /**
+     * @brief Unix/Linux specific unicode values for printing colored text to a terminal.
+     */
     namespace TerminalColor {
         static const char* const black      = "\u001B[30m";
         static const char* const red        = "\u001B[31m";
@@ -57,7 +66,7 @@ namespace DV {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * Assembles the timestamp and log level tags at the start of a logged message.
+     * @brief Assembles the timestamp and log level tags at the start of a logged message.
      * @param level
      * — The kind of logging being done. (info, warning, error, etc.) This effects text coloring if logging is being
      * done to a terminal.
@@ -107,10 +116,9 @@ namespace DV {
         _buffer << "]\t";
     }
 
-    // TODO: Make this "thread safe", meaning ensure that the whole message is written at once without
-    // getting interlaced with other messages. This *should* work as is because an entire buffer is being
-    // output all at once, but a mutex lock may still be needed, particularly because something might happen
-    // between output of the buffer and the endl.
+    /**
+     * @brief Fills the output stream with the content of the internal buffer and flushes the stream.
+     */
     void Logger::write() { _out << _buffer.rdbuf() << std::endl; }
 
 }
