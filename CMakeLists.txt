@@ -35,9 +35,9 @@ set(PROGRAM_NAME logger_test)
 ### - Tee'd output (logging individual messages to terminal and file at the same time).
 ### - Simple log file rotation. (File size limit.)
 set(MAJOR 0)
-set(MINOR 55) # 5/9 desired features.
+set(MINOR 66) # 6/9 threading work.
 set(PATCH 0)
-set(TWEAK 1)
+set(TWEAK 0)
 project(${PROJECT_NAME} VERSION ${MAJOR}.${MINOR}.${PATCH}.${TWEAK})
 
 ####################################################################################################
@@ -46,6 +46,9 @@ project(${PROJECT_NAME} VERSION ${MAJOR}.${MINOR}.${PATCH}.${TWEAK})
 
 # Choose the C++ language standard the compiler should use.
 set(CMAKE_CXX_STANDARD 17)
+# Ensure threading works.
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 # Generate a header that will make the code aware of its own version.
 # Generates "logger_version.h"
@@ -66,7 +69,7 @@ endif()
 
 # Build the test program executable.
 add_executable(${PROGRAM_NAME} "${SRC_FILES_TEST}")
-target_link_libraries(${PROGRAM_NAME} PUBLIC ${LIBRARY_NAME})
+target_link_libraries(${PROGRAM_NAME} PRIVATE ${LIBRARY_NAME} Threads::Threads)
 
 ####################################################################################################
 # Packaging and export.

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <mutex>
 
 namespace DV {
 
@@ -43,15 +44,18 @@ namespace DV {
         const char* _name;          // Name of the logger.
         std::ostream& _out;         // Output stream
         std::stringstream _buffer;  // Buffer for assembling the finished message to output.
+        std::mutex _writeMutex;
 
         enum class LogLevel { info, warn, error, fatal, debug, trace };
 
         template<typename... Message>
         void assemble(LogLevel logLevel, Message... msg)
         {
+            _writeMutex.lock();
             this->buildHeader(logLevel);    // Add a header to the output buffer.
             this->assemble(msg...);         // Add all message parts (via 1 of 2 assembly helpers) to the buffer.
             this->write();                  // Write the finished message buffer to the output stream.
+            _writeMutex.unlock();
         }
 
         // First message assembly helper for when there are two or more parts.
