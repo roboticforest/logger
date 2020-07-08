@@ -1,2 +1,10 @@
+# CLion project and build folders.
 .idea/*
 *build*/*
+
+# CMake generated header that constantly changes.
+logger_version.h
+
+# Manually created install bundles
+dvlogger*-Debug/*
+dvlogger*-Release/*
