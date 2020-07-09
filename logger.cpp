@@ -10,6 +10,7 @@
 #include <sstream>
 #include <string>
 #include <chrono>
+#include <functional>
 
 namespace DV {
 
@@ -21,23 +22,23 @@ namespace DV {
      * @brief Unix/Linux specific unicode values for printing colored text to a terminal.
      */
     namespace TerminalColor {
-        static const char* const black      = "\u001B[30m";
-        static const char* const red        = "\u001B[31m";
-        static const char* const green      = "\u001B[32m";
-        static const char* const yellow     = "\u001B[33m";
-        static const char* const blue       = "\u001B[34m";
-        static const char* const magenta    = "\u001B[35m";
-        static const char* const cyan       = "\u001B[36m";
-        static const char* const white      = "\u001B[37m";
-        static const char* const reset      = "\u001B[0m";
-        static const char* const bgBlack    = "\u001B[40m";
-        static const char* const bgRed      = "\u001B[41m";
-        static const char* const bgGreen    = "\u001B[42m";
-        static const char* const bgYellow   = "\u001B[43m";
-        static const char* const bgBlue     = "\u001B[44m";
-        static const char* const bgMagenta  = "\u001B[45m";
-        static const char* const bgCyan     = "\u001B[46m";
-        static const char* const bgWhite    = "\u001B[47m";
+        [[maybe_unused]] static const char* const black      = "\u001B[30m";
+        [[maybe_unused]] static const char* const red        = "\u001B[31m";
+        [[maybe_unused]] static const char* const green      = "\u001B[32m";
+        [[maybe_unused]] static const char* const yellow     = "\u001B[33m";
+        [[maybe_unused]] static const char* const blue       = "\u001B[34m";
+        [[maybe_unused]] static const char* const magenta    = "\u001B[35m";
+        [[maybe_unused]] static const char* const cyan       = "\u001B[36m";
+        [[maybe_unused]] static const char* const white      = "\u001B[37m";
+        [[maybe_unused]] static const char* const reset      = "\u001B[0m";
+        [[maybe_unused]] static const char* const bgBlack    = "\u001B[40m";
+        [[maybe_unused]] static const char* const bgRed      = "\u001B[41m";
+        [[maybe_unused]] static const char* const bgGreen    = "\u001B[42m";
+        [[maybe_unused]] static const char* const bgYellow   = "\u001B[43m";
+        [[maybe_unused]] static const char* const bgBlue     = "\u001B[44m";
+        [[maybe_unused]] static const char* const bgMagenta  = "\u001B[45m";
+        [[maybe_unused]] static const char* const bgCyan     = "\u001B[46m";
+        [[maybe_unused]] static const char* const bgWhite    = "\u001B[47m";
     }
 
     // Simple stream manipulators to change the terminal output colors.
@@ -54,15 +55,21 @@ namespace DV {
     // ----------------------------------------------------------------------------------------------------
 
     Logger::Logger(const char* name, std::ostream& os)
-            :_name(name), _out(os)
+            :_name(name)
     {
-        _outputColorText = _out.rdbuf() == std::cout.rdbuf();
+        _outputColorText = os.rdbuf() == std::cout.rdbuf();
+        _streams.push_back(std::ref(os));
     }
 
     Logger::~Logger() = default;
 
     bool Logger::addSplit(std::ostream& os)
     {
+        // FIXME: The implementation of color output assumes that only one stream will be sent data, and that it matches
+        //        std::cout. Once any additional streams get added they will also get the color codes sent to them and
+        //        they may not know how to handle them.
+        _outputColorText = false; // Disable color output for split streams. Not elegant, but easy.
+        _streams.push_back(std::ref(os));
         return false;
     }
 
@@ -122,8 +129,12 @@ namespace DV {
     }
 
     /**
-     * @brief Fills the output stream with the content of the internal buffer and flushes the stream.
+     * @brief Copies the content of the buffer to the output stream(s) and clears the buffer.
      */
-    void Logger::write() { _out << _buffer.rdbuf() << std::endl; }
-
+    void Logger::write() {
+        for (auto & streamItem : _streams) {
+            streamItem.get() << _buffer.str() << std::endl;
+        }
+        _buffer.str("");
+    }
 }

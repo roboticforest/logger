@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 #include <mutex>
+#include <vector>
 
 /**
  * @brief "DV" is short for David Vitez.
@@ -46,8 +47,6 @@ namespace DV {
         // Constructors, destructors, and other setup functions.
         // ----------------------------------------------------------------------------------------------------
 
-        // TODO: Implement the ability to handle splitting output!
-        //       Make a second constructor that takes in additional streams so that logging output can be tee'd.
         /**
          * @brief Constructs the logger.
          * @param name
@@ -75,7 +74,6 @@ namespace DV {
          * @return
          * — True if registering the stream was successful.
          */
-         // TODO: Implement addSplit().
         bool addSplit(std::ostream& os);
 
         // ----------------------------------------------------------------------------------------------------
@@ -92,9 +90,11 @@ namespace DV {
     private:
         // TODO: Revisit pImpl. Figure out what can and can't be hidden while preserving the variadic templates.
         const char* _name;          // Name of the logger.
-        std::ostream& _out;         // Output stream
+        // std::ostream& _out;         // Output stream
+        std::vector<std::reference_wrapper<std::ostream>> _streams;    // All output streams (usually 1, maybe 2).
         std::stringstream _buffer;  // Buffer for assembling the finished message to output.
         std::mutex _writeMutex;     // For protecting buffering and write operations from threads.
+        bool _outputColorText;      // For stopping color codes from being used when not printing to std::cout.
 
         /**
          * @brief Specifies the type of log entry being created.
@@ -148,10 +148,6 @@ namespace DV {
 
         // Output the fully assembled message to the output stream.
         void write();
-
-        // For controlling if color codes should be printed. This is managed by the logger internally if it detects
-        // that it is printing to a console/terminal or if it is printing to something else.
-        bool _outputColorText;
     };
 }
 

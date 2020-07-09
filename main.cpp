@@ -20,7 +20,7 @@
  * @param log
  * — The logger instance to run the test with.
  */
-void basicTest(DV::Logger& log) {
+[[maybe_unused]] void basicTest(DV::Logger& log) {
     log.debug("Beginning basic logging test.");
     log.info("Testing the logger library. Version:",
             LOGGER_VERSION_MAJOR, '.',
@@ -67,7 +67,7 @@ void basicTest(DV::Logger& log) {
  * — The ending value which stops the logging loop (exclusive). If logging from 0 to 10, 9 will be the last number
  * logged.
  */
-void logLoop(DV::Logger& log, int start, int end) {
+[[maybe_unused]] void logLoop(DV::Logger& log, int start, int end) {
     if (start >= end) {
         log.error("logLoop() Test Failed!");
         log.error(R"(Variable "start" must be < or == variable "end".)");
@@ -88,7 +88,7 @@ void logLoop(DV::Logger& log, int start, int end) {
  * @param log
  * — The logger instance to run the test with.
  */
-void threadTest(DV::Logger& log) {
+[[maybe_unused]] void threadTest(DV::Logger& log) {
     log.debug("Thread ID:", std::this_thread::get_id());
     log.debug("Spawning 5 other threads.");
     std::thread loop1(logLoop, std::ref(log), 0, 1000);
@@ -119,7 +119,18 @@ void threadTest(DV::Logger& log) {
     }
 }
 
-void badStreamTest(DV::Logger& log)
+/**
+ * @brief Deliberately closes a file stream being used by the logger to see what happens.
+ * @details Writing to a closed file stream is an extremely easy way to put a stream into a bad state. This doesn't
+ * throw any exceptions, but it does flip the streams bad/error bit and makes it unusable. From the user's perspective
+ * all they can see is that the logger isn't printing any more messages. This is something that probably could be
+ * recovered from, but only if the logger knew it was working with a file stream (which it doesn't). With regular
+ * output streams you can manually clear the error bit and wipe out bad characters. That solution wouldn't work for
+ * a closed file stream.
+ * @param log
+ * — The logger that will unknowingly use a bad output stream.
+ */
+[[maybe_unused]] void badStreamTest(DV::Logger& log)
 {
     log.trace("Entering badStreamTest():");
 
@@ -145,7 +156,14 @@ void badStreamTest(DV::Logger& log)
     log.trace("Exiting badStreamTest().");
 }
 
-void deadStreamTest(DV::Logger& log)
+/**
+ * @brief Deliberately deletes an output stream (allocated on the heap) that the logger is using.
+ * @details As expected, deleting an object that another object is using causes a segmentation fault. This might be
+ * avoidable by having the logger use a smart pointer to a stream instead of a reference.
+ * @param log
+ * — The logger that will unknowingly use a deleted output stream.
+ */
+[[maybe_unused]] void deadStreamTest(DV::Logger& log)
 {
     log.trace("Entering deadStreamTest():");
 
@@ -169,6 +187,64 @@ void deadStreamTest(DV::Logger& log)
 }
 
 /**
+ * @brief Test adding extra streams to a logger.
+ * @details This test tries to tee a logger multiple times, creating log entries before and after each split.
+ */
+[[maybe_unused]] void teeStreamTest() {
+    DV::Logger log("Multilog", std::cout);
+
+    log.debug("Logger created.");
+    log.trace("teeStreamTest() Entered:");
+    log.info("Testing output!");
+    log.warn("Printing in color. Watch for colors.");
+
+    log.debug("Adding a split/tee to a file.");
+    std::ofstream fileA("split-stream-a.log");
+    if (!fileA.is_open()) {
+        log.error("Could not open file!!!");
+        log.error("Aborting test.");
+        return;
+    }
+    log.addSplit(fileA);
+    log.debug("Split created.");
+
+    log.info("Testing split (tee'd) output!");
+
+    log.debug("Adding a split/tee to a file.");
+    std::ofstream fileB("split-stream-b.log");
+    if (!fileB.is_open()) {
+        log.error("Could not open file!!!");
+        log.error("Aborting test.");
+        return;
+    }
+    log.addSplit(fileB);
+    log.debug("Split created.");
+
+    log.info("Testing output with 2 splits!");
+
+    log.debug("Adding a split/tee to a file.");
+    std::ofstream fileC("split-stream-c.log");
+    if (!fileC.is_open()) {
+        log.error("Could not open file!!!");
+        log.error("Aborting test.");
+        return;
+    }
+    log.addSplit(fileC);
+    log.debug("Split created.");
+
+    log.info("Testing output with 3 splits!");
+
+    log.info("Output is now heading to 4 locations.");
+    log.info("Location 1 is the terminal.");
+    log.info("Location 2 is split-stream-a.log.");
+    log.info("Location 3 is split-stream-b.log.");
+    log.info("Location 4 is split-stream-c.log.");
+
+    log.debug("Done testing.");
+    log.trace("teeStreamTest() Exiting.");
+}
+
+/**
  * @brief The entry point for the logger test application.
  * @details main() is the entry point only for the logger test application and not for the library. The library is
  * compiled separately and is linked to this tester (and the act of linking itself is part of testing the library).
@@ -179,21 +255,35 @@ void deadStreamTest(DV::Logger& log)
 int main() {
 
     // Log to the standard character output stream.
-    DV::Logger termLog("User Terminal", std::cout);
-    basicTest(termLog);
+    // DV::Logger termLog("User Terminal", std::cout);
+    // basicTest(termLog);
 
     // Log to a file stream.
-    std::ofstream file("file_output.log");
-    DV::Logger fileLog("File Output", file);
-    basicTest(fileLog);
+    // std::ofstream file("file_output.log");
+    // DV::Logger fileLog("File Output", file);
+    // basicTest(fileLog);
 
     // Stress test threads fighting over logging to the terminal and a file.
     // threadTest(termLog);
     // threadTest(fileLog);
 
     // Test the logger when the stream it's using is in a bad state.
-    badStreamTest(termLog);
-    deadStreamTest(termLog);
+    // badStreamTest(termLog);  // Stream becomes unusable.
+    // deadStreamTest(termLog); // Deliberately causes a seg-fault.
+
+    // Test adding additional output stream references to the logger.
+    // teeStreamTest();
+
+    DV::Logger multilog("Multi-Log", std::cout);
+    std::ofstream fileA("output-a.log");
+    std::ofstream fileB("output-b.log");
+    std::ofstream fileC("output-c.log");
+
+    multilog.addSplit(fileA);
+    multilog.addSplit(fileB);
+    multilog.addSplit(fileC);
+
+    threadTest(multilog);
 
     return 0;
 }

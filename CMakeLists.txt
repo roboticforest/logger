@@ -32,10 +32,10 @@ set(PROGRAM_NAME logger_test)
 ### X Tweak - print out timezone.
 ### - Option to append to log files. (Currently it always overwrites the entire file.)
 ### X Thread safe logging. (Streams are already safe, but output from many can mix.)
-### o Tee'd output (logging individual messages to terminal and file at the same time).
+### X Tee'd output (logging individual messages to terminal and file at the same time).
 ### - Simple log file rotation. (File size limit.)
 set(MAJOR 0)
-set(MINOR 77) # 7/9 Working on splitting output.
+set(MINOR 77) # 7/9 Splitting output.
 set(PATCH 0)
 set(TWEAK 0)
 project(${PROJECT_NAME} VERSION ${MAJOR}.${MINOR}.${PATCH}.${TWEAK})
