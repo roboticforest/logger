@@ -31,11 +31,11 @@ set(PROGRAM_NAME logger_test)
 ### X Print a timestamp as precise as possible as YYYY-MM-DD HH:MM:SS:something (ended up being nanoseconds).
 ### X Tweak - print out timezone.
 ### - Option to append to log files. (Currently it always overwrites the entire file.)
-### - Thread safe logging. (Streams are already safe, but output from many can mix.)
-### - Tee'd output (logging individual messages to terminal and file at the same time).
+### X Thread safe logging. (Streams are already safe, but output from many can mix.)
+### o Tee'd output (logging individual messages to terminal and file at the same time).
 ### - Simple log file rotation. (File size limit.)
 set(MAJOR 0)
-set(MINOR 66) # 6/9 threading work.
+set(MINOR 77) # 7/9 Working on splitting output.
 set(PATCH 0)
 set(TWEAK 0)
 project(${PROJECT_NAME} VERSION ${MAJOR}.${MINOR}.${PATCH}.${TWEAK})

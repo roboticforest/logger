@@ -43,7 +43,7 @@ namespace DV {
     public:
 
         // ----------------------------------------------------------------------------------------------------
-        // Constructors and destructors
+        // Constructors, destructors, and other setup functions.
         // ----------------------------------------------------------------------------------------------------
 
         // TODO: Implement the ability to handle splitting output!
@@ -67,6 +67,16 @@ namespace DV {
         // NOT copyable.
         Logger(const Logger& rhs) = delete;
         Logger& operator=(const Logger& rhs) = delete;
+
+        /**
+         * @brief Tees output, adding an additional stream for log entries to be sent to.
+         * @param os
+         * — The new additional output stream to send log entries to.
+         * @return
+         * — True if registering the stream was successful.
+         */
+         // TODO: Implement addSplit().
+        bool addSplit(std::ostream& os);
 
         // ----------------------------------------------------------------------------------------------------
         // Public logging functions.

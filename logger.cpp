@@ -14,7 +14,7 @@
 namespace DV {
 
     // ----------------------------------------------------------------------------------------------------
-    // Unix/Linux terminal colors.
+    // Unix/Linux terminal color management routines.
     // ----------------------------------------------------------------------------------------------------
 
     /**
@@ -60,6 +60,11 @@ namespace DV {
     }
 
     Logger::~Logger() = default;
+
+    bool Logger::addSplit(std::ostream& os)
+    {
+        return false;
+    }
 
     // ----------------------------------------------------------------------------------------------------
     // Logger Private Interface

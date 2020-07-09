@@ -119,6 +119,55 @@ void threadTest(DV::Logger& log) {
     }
 }
 
+void badStreamTest(DV::Logger& log)
+{
+    log.trace("Entering badStreamTest():");
+
+    std::ofstream file("bad-stream.log");
+    DV::Logger fileLog("Bad Stream Logger", file);
+    fileLog.info("Closing file...");
+
+    log.debug("file.good:", file.good());
+    log.debug("file.isopen:", file.is_open());
+
+    log.debug("Closing file...");
+    file.close();
+
+    log.debug("file.good:", file.good());
+    log.debug("file.isopen:", file.is_open());
+
+    log.debug("Attempting another write operation.");
+    fileLog.error("This message will be in error.");
+
+    log.debug("file.good:", file.good());
+    log.debug("file.isopen:", file.is_open());
+
+    log.trace("Exiting badStreamTest().");
+}
+
+void deadStreamTest(DV::Logger& log)
+{
+    log.trace("Entering deadStreamTest():");
+
+    log.debug("Creating file stream object on the heap!");
+    auto * file = new std::ofstream("doomed.log");
+    DV::Logger fileLog("Doomed Logger", *file);
+    fileLog.info("File created.");
+
+    log.debug("file->good:", file->good());
+    log.debug("file->isopen:", file->is_open());
+
+    log.debug("Closing file...");
+    file->close();
+    log.debug("Deleting file stream!");
+    delete file;
+
+    log.debug("Attempting another write operation.");
+    fileLog.error("This message will be in error.");    // Will this crash?
+
+    log.trace("Exiting deadStreamTest().");
+}
+
 /**
  * @brief The entry point for the logger test application.
  * @details main() is the entry point only for the logger test application and not for the library. The library is
@@ -139,8 +188,12 @@ int main() {
     basicTest(fileLog);
 
     // Stress test threads fighting over logging to the terminal and a file.
-    threadTest(termLog);
-    threadTest(fileLog);
+    // threadTest(termLog);
+    // threadTest(fileLog);
+
+    // Test the logger when the stream it's using is in a bad state.
+    badStreamTest(termLog);
+    deadStreamTest(termLog);
 
     return 0;
 }
