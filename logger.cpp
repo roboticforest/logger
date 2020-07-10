@@ -63,14 +63,13 @@ namespace DV {
 
     Logger::~Logger() = default;
 
-    bool Logger::addSplit(std::ostream& os)
+    void Logger::addSplit(std::ostream& os)
     {
         // FIXME: The implementation of color output assumes that only one stream will be sent data, and that it matches
         //        std::cout. Once any additional streams get added they will also get the color codes sent to them and
         //        they may not know how to handle them.
         _outputColorText = false; // Disable color output for split streams. Not elegant, but easy.
         _streams.push_back(std::ref(os));
-        return false;
     }
 
     // ----------------------------------------------------------------------------------------------------

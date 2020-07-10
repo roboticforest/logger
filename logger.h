@@ -35,10 +35,11 @@ namespace DV {
      * @brief A simple logging tool.
      * @details This is a very simple logging tool built around std::ostream, which means it can write log entries to
      * the console/terminal, to a file, or any other specialization of standard output streams.
-     * @details To use the logger simply create an instance then call the appropriate logging functions like info()
-     * or warn(). You can pass in any number of arguments to the logging functions in any order you wish. Every
-     * argument must be printable via the usual stream output overloads (which makes custom print formats easy to
-     * create) and each will automatically be separated by spaces as they are logged.
+     * @details To use the logger simply create an instance, passing in a reference to a std::ostream it should use,
+     * then call the appropriate logging functions like info() or warn(). You can pass in any number of arguments to
+     * the logging functions in any order you wish. Every argument must be printable via the usual stream output
+     * overloads (which makes custom print formats easy to create) and each argument will automatically be separated
+     * with spaces as they are printed.
      */
     class Logger {
     public:
@@ -47,6 +48,10 @@ namespace DV {
         // Constructors, destructors, and other setup functions.
         // ----------------------------------------------------------------------------------------------------
 
+        /**
+         * @name Construction And Setup
+         * */
+        ///@{
         /**
          * @brief Constructs the logger.
          * @param name
@@ -57,35 +62,78 @@ namespace DV {
          * later.
          */
         explicit Logger(const char* name, std::ostream& os);
-        ~Logger();
-
-        // NOT movable.
-        Logger(Logger&& rhs) = delete;
-        Logger& operator=(Logger&& rhs) = delete;
-
-        // NOT copyable.
-        Logger(const Logger& rhs) = delete;
-        Logger& operator=(const Logger& rhs) = delete;
 
         /**
-         * @brief Tees output, adding an additional stream for log entries to be sent to.
+         * @brief Tees output.
+         * @details Adds an additional reference to an output stream for log entries to be sent to. This duplicates the
+         * logger's output to multiple locations. There is no limit to the number of new output streams that can be
+         * registered using this function, though in practice, if duplicating output is needed at all, it is not
+         * usually to more than one or two new streams.
          * @param os
          * — The new additional output stream to send log entries to.
-         * @return
-         * — True if registering the stream was successful.
          */
-        bool addSplit(std::ostream& os);
+        void addSplit(std::ostream& os);
+        ///@}
+
+        /**
+         * @name Copying And Moving
+         * @brief Loggers are meant to be passed around by reference and can not be copied or moved.
+         * @details Often loggers are available globally to an entire program, or semi-globally within from within
+         * specific subsystems. This logging utility library was designed with that intended use in mind. It is easy to
+         * pass around references to loggers though, which is generally a good idea for objects of any decent size or
+         * complexity.
+         */
+        ///@{
+        Logger(Logger&& rhs) = delete; // Move Constructor
+        Logger& operator=(Logger&& rhs) = delete; // Move Assignment Operator
+
+        Logger(const Logger& rhs) = delete; // Copy Constructor
+        Logger& operator=(const Logger& rhs) = delete; // Copy Assignment Operator
+        ///@}
+
+        ~Logger(); // Default.
 
         // ----------------------------------------------------------------------------------------------------
         // Public logging functions.
         // ----------------------------------------------------------------------------------------------------
 
+        /**
+         * @name Primary Logging Functions
+         * @brief These are the primary logging functions. Each call prints one log entry.
+         * @details These functions assemble and print log entries using the stream(s) provided during setup. All the
+         * heavy lifting is done here. Working identically, each logging function takes an arbitrary list of arguments
+         * and converts them all into a single string of text to be printed. Each call is considered a single entry in
+         * the log (and is usually, though not necessarily, one line) and will automatically have a timestamp and header
+         * appended to the beginning of the entry. The only difference between each function is which header name tag
+         * (and coloring) gets printed. These tags are extremely useful for sorting log data.
+         * @details info() is typically for general messages, often even being used in release builds of software, which
+         * give broad descriptions of what the software is doing.
+         * @details warn() is often useful for announcing risky actions, or minor errors that don't leave the program
+         * unstable.
+         * @details error() is for recording errors. Usually unexpected things that prevent the program or end user from
+         * performing a desired action.
+         * @details fatal() is for errors that leave the program in a state that it can't recover from. Note that unlike
+         * some other logging utilities, calling fatal() doesn't shut down the program, it only reports log entries with
+         * the appropriate tag.
+         * @details debug() is for logging detailed under-the-hood types of information, such as pointer addresses,
+         * variables names, etc.
+         * @details trace() is usually used for recording when function calls happen and program flow notifications.
+         * This does not actually monitor the call stack. Like all other logging functions it simply writes out an
+         * appropriate log header.
+         * @param msg
+         * — The message to record as a log entry. This is a list of printable arguments that will be collected
+         * together into one text string, each separated with spaces. The arguments can be strings of text, variables,
+         * constants, and even user-defined types, so long as each has an overload of the standard stream operator they
+         * will be accepted.
+         */
+        ///@{
         template<typename... Message> void debug (Message... msg) { this->assemble(LogLevel::debug, msg...); }
         template<typename... Message> void error (Message... msg) { this->assemble(LogLevel::error, msg...); }
         template<typename... Message> void fatal (Message... msg) { this->assemble(LogLevel::fatal, msg...); }
         template<typename... Message> void info  (Message... msg) { this->assemble(LogLevel::info,  msg...); }
         template<typename... Message> void trace (Message... msg) { this->assemble(LogLevel::trace, msg...); }
         template<typename... Message> void warn  (Message... msg) { this->assemble(LogLevel::warn,  msg...); }
+        ///@}
 
     private:
         // TODO: Revisit pImpl. Figure out what can and can't be hidden while preserving the variadic templates.
