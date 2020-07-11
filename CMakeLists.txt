@@ -54,14 +54,16 @@ find_package(Threads REQUIRED)
 # Generates "logger_version.h"
 make_version_header(${PROJECT_NAME} ${MAJOR} ${MINOR} ${PATCH} ${TWEAK})
 
-# Build the logging library, setting compiler specific warning flags where appropriate.
+# Build the logging library, setting compiler specific warning ond compilation flags where appropriate.
 set(SRC_FILES_LIB logger.cpp)
 set(SRC_FILES_TEST main.cpp)
 set(INC_FILES logger.h logger_version.h)
 # message("${SRC_FILES}") # For debugging this CMake file.
 add_library(${LIBRARY_NAME} STATIC "${SRC_FILES_LIB}")
 if ( CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU" )
-    target_compile_options( ${LIBRARY_NAME} PRIVATE -Wall -Wextra -Wunreachable-code -Wpedantic)
+    # -fPIC makes "Position Independent Code" which will allow this library to be torn apart and integrated into
+    # dynamic shared libraries and not just included into executables.
+    target_compile_options( ${LIBRARY_NAME} PRIVATE -Wall -Wextra -Wunreachable-code -Wpedantic -fPIC)
 endif()
 if ( CMAKE_CXX_COMPILER_ID MATCHES "MSVC" )
     target_compile_options( ${LIBRARY_NAME} PRIVATE /WX /W4 )
