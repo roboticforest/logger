@@ -1,3 +1,10 @@
+# Files that are irrelevent to the project.
+count_code_lines.sh
+
+# Bundled packages, archives, and other releases of the project.
+dvlogger*.7z
+dvlogger*.zip
+
 # CLion project and build folders.
 .idea/*
 *build*/*
