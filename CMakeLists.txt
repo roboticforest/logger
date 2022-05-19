@@ -11,8 +11,9 @@
 cmake_minimum_required(VERSION 3.16)
 # The following CMake files are a separate project and their exact path depends on programmer preference.
 set(CUSTOM_CMAKE_FN_PATH "../cmake")
-include("${CUSTOM_CMAKE_FN_PATH}/make_library_configs.cmake")
-include("${CUSTOM_CMAKE_FN_PATH}/make_version_header.cmake")
+include("${CUSTOM_CMAKE_FN_PATH}/make_cpp_version_header.cmake")
+include("${CUSTOM_CMAKE_FN_PATH}/make_cmake_config_file.cmake")
+include("${CUSTOM_CMAKE_FN_PATH}/make_cmake_config_version_file.cmake")
 
 # Set the names of each thing being built, this library project, the library itself, and the library tester app.
 set(PROJECT_NAME logger)
@@ -36,7 +37,7 @@ set(PROGRAM_NAME logger_test)
 ### - Simple log file rotation. (File size limit.)
 set(MAJOR 0)
 set(MINOR 77) # 7/9 Splitting output.
-set(PATCH 1)  # Compilation fix.
+set(PATCH 2)  # Compilation fixes.
 set(TWEAK 0)
 project(${PROJECT_NAME} VERSION ${MAJOR}.${MINOR}.${PATCH}.${TWEAK})
 
@@ -52,7 +53,10 @@ find_package(Threads REQUIRED)
 
 # Generate a header that will make the code aware of its own version.
 # Generates "logger_version.h"
-make_version_header(${PROJECT_NAME} ${MAJOR} ${MINOR} ${PATCH} ${TWEAK})
+make_cpp_version_header(
+    NAME ${PROJECT_NAME}
+    VERSION ${MAJOR}.${MINOR}.${PATCH}.${TWEAK}
+)
 
 # Build the logging library, setting compiler specific warning ond compilation flags where appropriate.
 set(SRC_FILES_LIB logger.cpp)
@@ -62,7 +66,7 @@ set(INC_FILES logger.h logger_version.h)
 add_library(${LIBRARY_NAME} STATIC "${SRC_FILES_LIB}")
 if ( CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU" )
     # -fPIC makes "Position Independent Code" which will allow this library to be torn apart and integrated into
-    # dynamic shared libraries and not just included into executables.
+    # other dynamic shared libraries and not just usable by executable files alone.
     target_compile_options( ${LIBRARY_NAME} PRIVATE -Wall -Wextra -Wunreachable-code -Wpedantic -fPIC)
 endif()
 if ( CMAKE_CXX_COMPILER_ID MATCHES "MSVC" )
@@ -79,7 +83,11 @@ target_link_libraries(${PROGRAM_NAME} PRIVATE ${LIBRARY_NAME} Threads::Threads)
 
 # Create library configuration files for other projects to use.
 # This generates both a <library_name>-config.cmake and a <library_name>-config-version.cmake.
-make_library_configs(${LIBRARY_NAME} ${MAJOR} ${MINOR} ${PATCH} ${TWEAK})
+make_cmake_config_file(
+    NAME ${PROJECT_NAME}
+    VAR_PREFIX ${PROJECT_NAME}
+    LIB_NAME ${LIBRARY_NAME}
+)
 
 # Prep for later packaging.
 # You must manually run `cmake --install <build-folder>` from the project root directory.
