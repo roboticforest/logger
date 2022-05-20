@@ -11,6 +11,7 @@
 #include <string>
 #include <chrono>
 #include <functional>
+#include <iomanip>
 
 namespace DV {
 
@@ -96,8 +97,13 @@ namespace DV {
         std::time_t curTimeSecondPrecision = curTimeNanosecondPrecision/1000000000; // Deliberate integer rounding.
         std::strftime(timeStr, sizeof(timeStr), "%Z %F %T", std::localtime(&curTimeSecondPrecision));
 
-        // Finally print the time stamp.
-        _buffer << '[' << timeStr << ':' << (curTimeNanosecondPrecision - curTimeSecondPrecision*1000000000) << ']';
+        // Finally, print the time stamp.
+        _buffer << '['
+            << timeStr
+            << ':'
+            << std::setw(9) << std::right << std::setfill('0')
+            << (curTimeNanosecondPrecision - curTimeSecondPrecision*1000000000)
+            << ']';
         _buffer << ' ';
 
         // Append logger name and level.
