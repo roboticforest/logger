@@ -37,7 +37,7 @@ set(PROGRAM_NAME logger_test)
 ### - Simple log file rotation. (File size limit.)
 set(MAJOR 0)
 set(MINOR 77) # 7/9 Splitting output.
-set(PATCH 2)  # Compilation fixes.
+set(PATCH 3)  # Compilation fixes, and nanosecond format bug.
 set(TWEAK 0)
 project(${PROJECT_NAME} VERSION ${MAJOR}.${MINOR}.${PATCH}.${TWEAK})
 
@@ -55,7 +55,8 @@ find_package(Threads REQUIRED)
 # Generates "logger_version.h"
 make_cpp_version_header(
     NAME ${PROJECT_NAME}
-    VERSION ${MAJOR}.${MINOR}.${PATCH}.${TWEAK}
+    VERSION ${PROJECT_VERSION}
+    PATH "."
 )
 
 # Build the logging library, setting compiler specific warning ond compilation flags where appropriate.
@@ -84,15 +85,19 @@ target_link_libraries(${PROGRAM_NAME} PRIVATE ${LIBRARY_NAME} Threads::Threads)
 # Create library configuration files for other projects to use.
 # This generates both a <library_name>-config.cmake and a <library_name>-config-version.cmake.
 make_cmake_config_file(
-    NAME ${PROJECT_NAME}
+    NAME ${LIBRARY_NAME}
     VAR_PREFIX ${PROJECT_NAME}
     LIB_NAME ${LIBRARY_NAME}
+)
+make_cmake_config_version_file(
+    NAME ${LIBRARY_NAME}
+    VERSION ${PROJECT_VERSION}
 )
 
 # Prep for later packaging.
 # You must manually run `cmake --install <build-folder>` from the project root directory.
 # The project root directory should be the folder this file is contained in.
-set(PACKAGE_DEST "${PROJECT_SOURCE_DIR}/${LIBRARY_NAME}-${MAJOR}.${MINOR}.${PATCH}.${TWEAK}-${CMAKE_BUILD_TYPE}")
+set(PACKAGE_DEST "${PROJECT_SOURCE_DIR}/${LIBRARY_NAME}-${PROJECT_VERSION}-${CMAKE_BUILD_TYPE}")
 install(TARGETS ${LIBRARY_NAME} DESTINATION "${PACKAGE_DEST}/lib")
 install(TARGETS ${PROGRAM_NAME} DESTINATION "${PACKAGE_DEST}/bin")
 install(FILES ${INC_FILES} DESTINATION "${PACKAGE_DEST}/include")
