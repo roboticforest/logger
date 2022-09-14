@@ -86,7 +86,7 @@ namespace DV {
     void Logger::buildHeader(LogLevel level)
     {
         // Get the current time.
-        // By default the time is represented in nanoseconds, but adding in the duration_cast helps future-proof
+        // By default, the time is represented in nanoseconds, but adding in the duration_cast helps future-proof
         // the code a bit.
         auto curTimeNanosecondPrecision = std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
