@@ -10,13 +10,11 @@
 # General CMake project config.
 ####################################################################################################
 
-# Specify the version being used and include some custom utility functions.
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.23)  # Specify which version of CMake is being used here.
+
 # The following CMake files are a separate project and their exact path depends on programmer preference.
-set(CUSTOM_CMAKE_FN_PATH "../cmake")
-include("${CUSTOM_CMAKE_FN_PATH}/make_cpp_version_header.cmake")
-include("${CUSTOM_CMAKE_FN_PATH}/make_cmake_config_file.cmake")
-include("${CUSTOM_CMAKE_FN_PATH}/make_cmake_config_version_file.cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+include(custom_config_file_helpers)
 
 # Set the names of each thing being built, this library project, the library itself, and the library tester app.
 set(PROJECT_NAME logger)
@@ -38,24 +36,18 @@ set(PROGRAM_NAME logger_test)
 ### X Thread safe logging. (Streams are already safe, but output from many can mix.)
 ### X Tee'd output (logging individual messages to terminal and file at the same time).
 ### - Simple log file rotation. (File size limit.)
-set(MAJOR 0)
-set(MINOR 77) # 7/9 Splitting output.
-set(PATCH 3)  # Compilation fixes, and nanosecond format bug.
-set(TWEAK 0)
-project(${PROJECT_NAME} VERSION ${MAJOR}.${MINOR}.${PATCH}.${TWEAK})
+project(${PROJECT_NAME} VERSION 0.77.4.0)
 
 ####################################################################################################
 # Source code and compilation.
 ####################################################################################################
 
-# Choose the C++ language standard the compiler should use.
-set(CMAKE_CXX_STANDARD 17)
-# Ensure threading works.
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
+set(CMAKE_CXX_STANDARD 17)          # Specify which version of C++ we're using here.
+set(THREADS_PREFER_PTHREAD_FLAG ON) # This is a multithreaded library.
+find_package(Threads REQUIRED)      # Require threading support.
 
-# Generate a header that will make the code aware of its own version.
-# Generates "logger_version.h"
+# Generate "logger_version.h" to provide the library's version info to its own C++ code.
+message(STATUS "Creating version header...")
 make_cpp_version_header(
     NAME ${PROJECT_NAME}
     VERSION ${PROJECT_VERSION}
