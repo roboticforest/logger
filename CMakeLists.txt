@@ -1,6 +1,9 @@
 ####################################################################################################
-# All rights reserved © 2020 David Vitez (AKA: Robotic Forest)
+# All rights reserved © 2019-2025 David Vitez (AKA: Robotic Forest)
 # This software is the private intellectual property of David Vitez unless otherwise stated.
+#
+# Start Date: December 24th, 2019
+# Working Title: DV Logger
 ####################################################################################################
 
 ####################################################################################################
