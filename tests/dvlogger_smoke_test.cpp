@@ -3,7 +3,7 @@
 #include <string>
 
 #include "logger.h"
-#include "logger_version.h"
+#include "version.hpp"
 
 int main()
 {

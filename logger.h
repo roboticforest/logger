@@ -19,7 +19,7 @@
 namespace DV {
 
     /**
-     * @example "Basic Usage"
+     * @par Basic Usage
      * Create an instance of logger by giving it a name and a stream to output to.
      * @code
      * DV::Logger log("Terminal Log", std::cout);

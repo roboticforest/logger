@@ -2,7 +2,7 @@
 # Project Setup
 ####################################################################################################
 
-cmake_minimum_required(VERSION 3.30...4.0)
+cmake_minimum_required(VERSION 4.0)
 project(logger VERSION 0.77.4.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
@@ -16,23 +16,31 @@ find_package(Threads REQUIRED)
 option(DVLOGGER_BUILD_SHARED "Build shared library target." ON)
 option(DVLOGGER_BUILD_STATIC "Build static library target." ON)
 option(DVLOGGER_WARNINGS_AS_ERRORS "Treat compiler warnings as errors (MSVC only)." OFF)
+option(DVLOGGER_BUILD_DOCS "Build API documentation with Doxygen." ON)
 
 if(NOT DVLOGGER_BUILD_SHARED AND NOT DVLOGGER_BUILD_STATIC)
     message(FATAL_ERROR "At least one of DVLOGGER_BUILD_SHARED or DVLOGGER_BUILD_STATIC must be ON.")
 endif()
 
 set(DVLOGGER_GENERATED_DIR "${PROJECT_BINARY_DIR}/generated")
-set(DVLOGGER_GENERATED_VERSION_HEADER "${DVLOGGER_GENERATED_DIR}/logger_version.h")
+set(DVLOGGER_GENERATED_VERSION_HPP "${DVLOGGER_GENERATED_DIR}/version.hpp")
+set(DVLOGGER_GENERATED_VERSION_COMPAT_HEADER "${DVLOGGER_GENERATED_DIR}/logger_version.h")
 file(MAKE_DIRECTORY "${DVLOGGER_GENERATED_DIR}")
 configure_file(
+    "${PROJECT_SOURCE_DIR}/cmake/version.hpp.in"
+    "${DVLOGGER_GENERATED_VERSION_HPP}"
+    @ONLY
+)
+configure_file(
     "${PROJECT_SOURCE_DIR}/cmake/logger_version.h.in"
-    "${DVLOGGER_GENERATED_VERSION_HEADER}"
+    "${DVLOGGER_GENERATED_VERSION_COMPAT_HEADER}"
     @ONLY
 )
 
 set(DVLOGGER_PUBLIC_HEADERS
     "${PROJECT_SOURCE_DIR}/logger.h"
-    "${DVLOGGER_GENERATED_VERSION_HEADER}"
+    "${DVLOGGER_GENERATED_VERSION_HPP}"
+    "${DVLOGGER_GENERATED_VERSION_COMPAT_HEADER}"
 )
 set(DVLOGGER_SOURCES
     "${PROJECT_SOURCE_DIR}/logger.cpp"
@@ -89,6 +97,26 @@ if(DVLOGGER_BUILD_STATIC)
 endif()
 
 ####################################################################################################
+# Documentation
+####################################################################################################
+
+if(DVLOGGER_BUILD_DOCS)
+    find_package(Doxygen REQUIRED)
+
+    set(DVLOGGER_DOXYFILE_IN "${PROJECT_SOURCE_DIR}/cmake/Doxyfile.in")
+    set(DVLOGGER_DOXYFILE_OUT "${PROJECT_BINARY_DIR}/Doxyfile")
+    set(DVLOGGER_DOXYGEN_OUTPUT_DIR "${PROJECT_BINARY_DIR}/doc")
+    configure_file("${DVLOGGER_DOXYFILE_IN}" "${DVLOGGER_DOXYFILE_OUT}" @ONLY)
+
+    add_custom_target(docs ALL
+        COMMAND "${DOXYGEN_EXECUTABLE}" "${DVLOGGER_DOXYFILE_OUT}"
+        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM
+    )
+endif()
+
+####################################################################################################
 # Testing
 ####################################################################################################
 
@@ -97,7 +125,6 @@ include(CTest)
 if(BUILD_TESTING)
     add_executable(dvlogger_smoke_test "${PROJECT_SOURCE_DIR}/tests/dvlogger_smoke_test.cpp")
     target_compile_features(dvlogger_smoke_test PRIVATE cxx_std_20)
-    target_include_directories(dvlogger_smoke_test PRIVATE "${DVLOGGER_GENERATED_DIR}")
 
     if(TARGET dvlogger_static)
         target_link_libraries(dvlogger_smoke_test PRIVATE dvlogger_static)

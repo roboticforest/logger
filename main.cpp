@@ -10,7 +10,7 @@
 #include <mutex>
 
 #include "logger.h"
-#include "logger_version.h"
+#include "version.hpp"
 
 /**
  * @brief The simplest logger test. Good for checking if the logger install is working.

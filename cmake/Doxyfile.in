@@ -1,0 +1,15 @@
+PROJECT_NAME           = "Logger"
+PROJECT_NUMBER         = "@PROJECT_VERSION@"
+PROJECT_BRIEF          = "A simple C++ logging utility library."
+OUTPUT_DIRECTORY       = "@DVLOGGER_DOXYGEN_OUTPUT_DIR@"
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+QUIET                  = YES
+RECURSIVE              = NO
+INPUT                  = "@PROJECT_SOURCE_DIR@/logger.h" \
+                         "@PROJECT_SOURCE_DIR@/logger.cpp" \
+                         "@DVLOGGER_GENERATED_VERSION_HPP@"
+FILE_PATTERNS          = *.h *.hpp *.cpp
+EXTRACT_ALL            = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARNINGS               = NO
