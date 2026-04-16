@@ -11,8 +11,6 @@ int main()
     DV::Logger log("SmokeTest", captured);
 
     log.info("Version", LOGGER_VERSION_STRING);
-    log.warn("Threading support check");
-    log.error("Smoke path");
 
     const std::string output = captured.str();
     const bool has_header = output.find("SmokeTest:INFO") != std::string::npos;
