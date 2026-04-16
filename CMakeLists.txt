@@ -16,6 +16,7 @@ find_package(Threads REQUIRED)
 option(DVLOGGER_BUILD_SHARED "Build shared library target." ON)
 option(DVLOGGER_BUILD_STATIC "Build static library target." ON)
 option(DVLOGGER_BUILD_DOCS "Build API documentation with Doxygen." ON)
+option(DVLOGGER_ENABLE_MANUAL_TESTS "Enable manual/stress tests in CTest." OFF)
 
 if(NOT DVLOGGER_BUILD_SHARED AND NOT DVLOGGER_BUILD_STATIC)
     message(FATAL_ERROR "At least one of DVLOGGER_BUILD_SHARED or DVLOGGER_BUILD_STATIC must be ON.")
@@ -128,16 +129,65 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
-    add_executable(dvlogger_smoke_test "${PROJECT_SOURCE_DIR}/tests/dvlogger_smoke_test.cpp")
-    target_compile_features(dvlogger_smoke_test PRIVATE cxx_std_20)
-
     if(TARGET dvlogger_static)
-        target_link_libraries(dvlogger_smoke_test PRIVATE dvlogger_static)
+        set(DVLOGGER_TEST_LINK_TARGET dvlogger_static)
     else()
-        target_link_libraries(dvlogger_smoke_test PRIVATE dvlogger_shared)
+        set(DVLOGGER_TEST_LINK_TARGET dvlogger_shared)
     endif()
 
-    add_test(NAME dvlogger.smoke COMMAND dvlogger_smoke_test)
+    function(dvlogger_add_test target_name source_file test_name test_labels)
+        add_executable("${target_name}" "${source_file}")
+        target_compile_features("${target_name}" PRIVATE cxx_std_20)
+        target_link_libraries("${target_name}" PRIVATE "${DVLOGGER_TEST_LINK_TARGET}")
+        add_test(NAME "${test_name}" COMMAND "${target_name}")
+        set_tests_properties("${test_name}" PROPERTIES LABELS "${test_labels}")
+    endfunction()
+
+    dvlogger_add_test(
+        dvlogger_smoke_test
+        "${PROJECT_SOURCE_DIR}/tests/dvlogger_smoke_test.cpp"
+        dvlogger.smoke
+        "unit;smoke"
+    )
+    dvlogger_add_test(
+        dvlogger_format_test
+        "${PROJECT_SOURCE_DIR}/tests/logger_format_tests.cpp"
+        dvlogger.format
+        "unit;format"
+    )
+    dvlogger_add_test(
+        dvlogger_stream_test
+        "${PROJECT_SOURCE_DIR}/tests/logger_stream_tests.cpp"
+        dvlogger.stream
+        "unit;stream"
+    )
+    dvlogger_add_test(
+        dvlogger_thread_test
+        "${PROJECT_SOURCE_DIR}/tests/logger_thread_tests.cpp"
+        dvlogger.thread
+        "unit;thread"
+    )
+    dvlogger_add_test(
+        dvlogger_failure_mode_test
+        "${PROJECT_SOURCE_DIR}/tests/logger_failure_mode_tests.cpp"
+        dvlogger.failure_mode
+        "unit;failure_mode"
+    )
+
+    if(DVLOGGER_ENABLE_MANUAL_TESTS)
+        dvlogger_add_test(
+            dvlogger_stress_manual_test
+            "${PROJECT_SOURCE_DIR}/tests/manual/dvlogger_stress_manual_test.cpp"
+            dvlogger.manual.stress
+            "manual;stress"
+        )
+        dvlogger_add_test(
+            dvlogger_dead_stream_manual_test
+            "${PROJECT_SOURCE_DIR}/tests/manual/dvlogger_dead_stream_manual_test.cpp"
+            dvlogger.manual.dead_stream
+            "manual;failure_mode"
+        )
+    endif()
 endif()
 
 ####################################################################################################
