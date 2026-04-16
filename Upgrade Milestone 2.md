@@ -4,10 +4,10 @@ Goal: modernize logger internals toward C++20 modules with no behavior change.
 
 ## Current milestone plan (high-level)
 
-1. Freeze existing behavior with dedicated tests.
-2. Add a stable non-template logging backend entrypoint.
-3. Keep public variadic API, but make it thin and forwarding-only.
-4. Move mutable state and implementation internals behind pImpl.
+1. ~~Freeze existing behavior with dedicated tests.~~
+2. ~~Add a stable non-template logging backend entrypoint.~~
+3. ~~Keep public variadic API, but make it thin and forwarding-only.~~
+4. ~~Move mutable state and implementation internals behind pImpl.~~
 5. Add C++20 module interface and implementation units.
 6. Keep header-based compatibility path during transition.
 7. Update CMake to support both include-based and module-based consumption.
