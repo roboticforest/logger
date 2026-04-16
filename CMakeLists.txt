@@ -23,15 +23,6 @@ if(NOT DVLOGGER_BUILD_SHARED AND NOT DVLOGGER_BUILD_STATIC)
     message(FATAL_ERROR "At least one of DVLOGGER_BUILD_SHARED or DVLOGGER_BUILD_STATIC must be ON.")
 endif()
 
-set(DVLOGGER_GENERATED_DIR "${PROJECT_BINARY_DIR}/generated")
-set(DVLOGGER_GENERATED_VERSION_HPP "${DVLOGGER_GENERATED_DIR}/version.hpp")
-file(MAKE_DIRECTORY "${DVLOGGER_GENERATED_DIR}")
-configure_file(
-    "${PROJECT_SOURCE_DIR}/cmake/version.hpp.in"
-    "${DVLOGGER_GENERATED_VERSION_HPP}"
-    @ONLY
-)
-
 set(DVLOGGER_SOURCES
     "${PROJECT_SOURCE_DIR}/logger.cpp"
 )
@@ -45,35 +36,33 @@ function(dvlogger_apply_common_target_config target_name)
     target_compile_features("${target_name}" PUBLIC cxx_std_20)
     target_include_directories("${target_name}"
         PUBLIC
-            "$<BUILD_INTERFACE:${DVLOGGER_GENERATED_DIR}>"
             "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>"
-            "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+    )
+    target_compile_definitions("${target_name}" PUBLIC
+        DVLOGGER_VERSION_STRING="${PROJECT_VERSION}"
+        DVLOGGER_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        DVLOGGER_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+        DVLOGGER_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+        DVLOGGER_VERSION_TWEAK=${PROJECT_VERSION_TWEAK}
     )
     target_link_libraries("${target_name}" PUBLIC Threads::Threads)
 endfunction()
 
 set(DVLOGGER_INSTALL_TARGETS)
 
-function(dvlogger_attach_public_headers target_name)
+function(dvlogger_attach_public_modules target_name)
     target_sources("${target_name}" PUBLIC
-        FILE_SET dvlogger_public_headers
-        TYPE HEADERS
+        FILE_SET dvlogger_modules
+        TYPE CXX_MODULES
         BASE_DIRS "${PROJECT_SOURCE_DIR}"
-        FILES "${PROJECT_SOURCE_DIR}/logger.h"
-    )
-    target_sources("${target_name}" PUBLIC
-        FILE_SET dvlogger_generated_headers
-        TYPE HEADERS
-        BASE_DIRS "${DVLOGGER_GENERATED_DIR}"
-        FILES
-            "${DVLOGGER_GENERATED_VERSION_HPP}"
+        FILES "${PROJECT_SOURCE_DIR}/logger.cppm"
     )
 endfunction()
 
 if(DVLOGGER_BUILD_SHARED)
     add_library(dvlogger_shared SHARED)
     dvlogger_apply_common_target_config(dvlogger_shared)
-    dvlogger_attach_public_headers(dvlogger_shared)
+    dvlogger_attach_public_modules(dvlogger_shared)
     set_target_properties(dvlogger_shared PROPERTIES
         OUTPUT_NAME dvlogger
         EXPORT_NAME shared
@@ -86,7 +75,7 @@ endif()
 if(DVLOGGER_BUILD_STATIC)
     add_library(dvlogger_static STATIC)
     dvlogger_apply_common_target_config(dvlogger_static)
-    dvlogger_attach_public_headers(dvlogger_static)
+    dvlogger_attach_public_modules(dvlogger_static)
     set_target_properties(dvlogger_static PROPERTIES
         OUTPUT_NAME dvlogger_static
         EXPORT_NAME static
@@ -105,8 +94,7 @@ if(DVLOGGER_BUILD_DOCS)
     set(DVLOGGER_DOC_EXCLUDE_PATTERNS "*/.git/* */.svn/* */.hg/* */CMakeFiles/* */_CPack_Packages/* DartConfiguration.tcl CMakeLists.txt CMakeCache.txt")
 
     string(JOIN " " DVLOGGER_DOC_PUBLIC_INPUTS
-        "\"${PROJECT_SOURCE_DIR}/logger.h\""
-        "\"${DVLOGGER_GENERATED_VERSION_HPP}\""
+        "\"${PROJECT_SOURCE_DIR}/logger.cppm\""
     )
     set(DVLOGGER_DOC_PUBLIC_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc/public")
     set(DVLOGGER_DOC_PUBLIC_PROJECT_BRIEF "Public API reference for the Logger library.")
@@ -125,17 +113,15 @@ if(DVLOGGER_BUILD_DOCS)
         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
         DEPENDS
             "${DVLOGGER_DOC_PUBLIC_CONFIG_INPUT}"
-            "${PROJECT_SOURCE_DIR}/logger.h"
-            "${DVLOGGER_GENERATED_VERSION_HPP}"
+            "${PROJECT_SOURCE_DIR}/logger.cppm"
         COMMENT "Generating docs_public documentation with Doxygen"
         VERBATIM
     )
 
     if(DVLOGGER_BUILD_INTERNAL_DOCS)
         string(JOIN " " DVLOGGER_DOC_INTERNAL_INPUTS
-            "\"${PROJECT_SOURCE_DIR}/logger.h\""
+            "\"${PROJECT_SOURCE_DIR}/logger.cppm\""
             "\"${PROJECT_SOURCE_DIR}/logger.cpp\""
-            "\"${DVLOGGER_GENERATED_VERSION_HPP}\""
         )
         set(DVLOGGER_DOC_INTERNAL_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc/internal")
         set(DVLOGGER_DOC_INTERNAL_PROJECT_BRIEF "Private developer reference for the Logger library internals.")
@@ -153,9 +139,8 @@ if(DVLOGGER_BUILD_DOCS)
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
             DEPENDS
                 "${DVLOGGER_DOC_INTERNAL_CONFIG_INPUT}"
-                "${PROJECT_SOURCE_DIR}/logger.h"
+                "${PROJECT_SOURCE_DIR}/logger.cppm"
                 "${PROJECT_SOURCE_DIR}/logger.cpp"
-                "${DVLOGGER_GENERATED_VERSION_HPP}"
             COMMENT "Generating docs_internal documentation with Doxygen"
             VERBATIM
         )
@@ -262,9 +247,7 @@ install(TARGETS ${DVLOGGER_INSTALL_TARGETS}
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    FILE_SET dvlogger_public_headers DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-    FILE_SET dvlogger_generated_headers DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-    INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+    FILE_SET dvlogger_modules DESTINATION "${CMAKE_INSTALL_LIBDIR}/cxx/modules"
 )
 
 install(EXPORT dvloggerTargets

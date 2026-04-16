@@ -1,9 +1,10 @@
+import logger;
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
 
-#include "logger.h"
 #include "test_support.hpp"
 
 namespace {

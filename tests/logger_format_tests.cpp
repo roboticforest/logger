@@ -1,10 +1,10 @@
+import logger;
+
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include "logger.h"
-#include "version.hpp"
 #include "test_support.hpp"
 
 namespace {
@@ -49,7 +49,7 @@ bool test_message_assembly_spacing()
 
     log.info("SingleMessage");
     log.info("Many", 5, 3.14, 'x');
-    log.info("Version", LOGGER_VERSION_STRING);
+    log.info("Version", DV::Version::string);
 
     const std::vector<std::string> lines = split_lines(captured.str());
     bool ok = true;
@@ -60,7 +60,7 @@ bool test_message_assembly_spacing()
 
     ok &= expect(message_payload(lines[0]) == "SingleMessage", "Single argument payload mismatch.");
     ok &= expect(message_payload(lines[1]) == "Many 5 3.14 x", "Variadic payload spacing mismatch.");
-    ok &= expect(message_payload(lines[2]) == std::string("Version ") + LOGGER_VERSION_STRING,
+    ok &= expect(message_payload(lines[2]) == std::string("Version ") + std::string(DV::Version::string),
                  "Version payload mismatch.");
     return ok;
 }

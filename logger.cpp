@@ -4,16 +4,22 @@
  * @copyright All rights reserved (c) 2020 David Vitez
  */
 
-#include "logger.h"
+module;
 
 #include <chrono>
 #include <ctime>
 #include <functional>
 #include <iomanip>
+#include <iostream>
 #include <memory>
 #include <mutex>
+#include <sstream>
+#include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
+
+module logger;
 
 namespace DV {
 

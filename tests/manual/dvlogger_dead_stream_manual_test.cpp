@@ -1,7 +1,7 @@
+import logger;
+
 #include <fstream>
 #include <iostream>
-
-#include "logger.h"
 
 int main()
 {

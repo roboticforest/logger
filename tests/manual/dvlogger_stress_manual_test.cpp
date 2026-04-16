@@ -1,9 +1,9 @@
+import logger;
+
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <thread>
-
-#include "logger.h"
 #include "../test_support.hpp"
 
 namespace {
