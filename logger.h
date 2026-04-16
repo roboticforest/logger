@@ -8,13 +8,11 @@
 #define DV_LOGGER_H
 
 #include <iostream>
-#include <functional>
-#include <mutex>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
-#include <vector>
 
 /**
  * @brief "DV" is short for David Vitez.
@@ -157,13 +155,8 @@ namespace DV {
         ///@}
 
     private:
-        // TODO: Revisit pImpl. Figure out what can and can't be hidden while preserving the variadic templates.
-        const char* _name;          // Name of the logger.
-        // std::ostream& _out;         // Output stream
-        std::vector<std::reference_wrapper<std::ostream>> _streams;    // All output streams (usually 1, maybe 2).
-        std::stringstream _buffer;  // Buffer for assembling the finished message to output.
-        std::mutex _writeMutex;     // For protecting buffering and write operations from threads.
-        bool _outputColorText;      // For stopping color codes from being used when not printing to std::cout.
+        struct Impl;
+        std::unique_ptr<Impl> _impl;
 
         /**
          * @brief Specifies the type of log entry being created.
@@ -200,13 +193,8 @@ namespace DV {
             return payload.str();
         }
 
+        // Non-template backend seam for module/pImpl migration work.
         void emit(LogLevel, std::string_view payload);
-
-        // First part of message assembly. Adds a header to the message based on the given logging level.
-        void buildHeader(LogLevel);
-
-        // Output the fully assembled message to the output stream.
-        void write();
     };
 }
 

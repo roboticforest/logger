@@ -1,18 +1,19 @@
 /**
  * @file
  * @author David Vitez (AKA: Robotic Forest)
- * @copyright All rights reserved © 2020 David Vitez
+ * @copyright All rights reserved (c) 2020 David Vitez
  */
 
 #include "logger.h"
 
-#include <ctime>
-#include <sstream>
-#include <string>
 #include <chrono>
+#include <ctime>
 #include <functional>
 #include <iomanip>
+#include <memory>
+#include <mutex>
 #include <string_view>
+#include <vector>
 
 namespace DV {
 
@@ -52,26 +53,101 @@ namespace DV {
     std::ostream& traceColor(std::ostream& os) { os << TerminalColor::reset; return os; }
     std::ostream& resetColor(std::ostream& os) { os << TerminalColor::reset; return os; }
 
+    struct Logger::Impl {
+        const char* name;
+        std::vector<std::reference_wrapper<std::ostream>> streams;
+        std::stringstream buffer;
+        std::mutex write_mutex;
+        bool output_color_text;
+
+        explicit Impl(const char* logger_name, std::ostream& primary_stream)
+            : name(logger_name),
+              output_color_text(primary_stream.rdbuf() == std::cout.rdbuf())
+        {
+            streams.push_back(std::ref(primary_stream));
+        }
+
+        void addSplit(std::ostream& os)
+        {
+            // FIXME: The implementation of color output assumes that only one stream will be sent data, and that it
+            //        matches std::cout. Once any additional streams get added they will also get color codes sent to
+            //        them and they may not know how to handle them.
+            output_color_text = false;  // Disable color output for split streams. Not elegant, but easy.
+            streams.push_back(std::ref(os));
+        }
+
+        void buildHeader(LogLevel level)
+        {
+            // Get the current time.
+            // By default, the time is represented in nanoseconds, but adding in the duration_cast helps future-proof
+            // the code a bit.
+            auto curTimeNanosecondPrecision = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+
+            // Format the time as human readable.
+            // "%F %T" --> "%Y-%m-%d %H:%M:%S" --> "TZONE 2019-08-23 13:42:58\0" (26 chars)
+            char timeStr[26] = {0};
+            std::time_t curTimeSecondPrecision = curTimeNanosecondPrecision / 1000000000; // Deliberate integer rounding.
+            std::strftime(timeStr, sizeof(timeStr), "%Z %F %T", std::localtime(&curTimeSecondPrecision));
+
+            // Finally, print the time stamp.
+            buffer << '['
+                << timeStr
+                << ':'
+                << std::setw(9) << std::right << std::setfill('0')
+                << (curTimeNanosecondPrecision - curTimeSecondPrecision * 1000000000)
+                << ']';
+            buffer << ' ';
+
+            // Append logger name and level.
+            buffer << '[';
+            buffer << name << ':';
+            if (output_color_text) {
+                switch (level) {                                                                   // Default Colors
+                    case LogLevel::info:  buffer << infoColor  << "INFO"  << resetColor; break; // Blue
+                    case LogLevel::warn:  buffer << warnColor  << "WARN"  << resetColor; break; // Yellow
+                    case LogLevel::error: buffer << errorColor << "ERROR" << resetColor; break; // Red
+                    case LogLevel::fatal: buffer << fatalColor << "FATAL" << resetColor; break; // Black on Red
+                    case LogLevel::debug: buffer << debugColor << "DEBUG" << resetColor; break; // Green
+                    case LogLevel::trace: buffer << traceColor << "TRACE" << resetColor; break; // Default terminal color.
+                    default: break;
+                }
+            } else {
+                switch (level) {
+                case LogLevel::info:  buffer << "INFO"; break;
+                case LogLevel::warn:  buffer << "WARN"; break;
+                case LogLevel::error: buffer << "ERROR"; break;
+                case LogLevel::fatal: buffer << "FATAL"; break;
+                case LogLevel::debug: buffer << "DEBUG"; break;
+                case LogLevel::trace: buffer << "TRACE"; break;
+                default: break;
+                }
+            }
+            buffer << "]\t";
+        }
+
+        void write()
+        {
+            for (auto& stream_item : streams) {
+                stream_item.get() << buffer.str() << std::endl;
+            }
+            buffer.str("");
+        }
+    };
+
     // ----------------------------------------------------------------------------------------------------
     // Logger Public Interface Implementation
     // ----------------------------------------------------------------------------------------------------
 
     Logger::Logger(const char* name, std::ostream& os)
-            :_name(name)
-    {
-        _outputColorText = os.rdbuf() == std::cout.rdbuf();
-        _streams.push_back(std::ref(os));
-    }
+        : _impl(std::make_unique<Impl>(name, os))
+    {}
 
     Logger::~Logger() = default;
 
     void Logger::addSplit(std::ostream& os)
     {
-        // FIXME: The implementation of color output assumes that only one stream will be sent data, and that it matches
-        //        std::cout. Once any additional streams get added they will also get the color codes sent to them and
-        //        they may not know how to handle them.
-        _outputColorText = false; // Disable color output for split streams. Not elegant, but easy.
-        _streams.push_back(std::ref(os));
+        _impl->addSplit(os);
     }
 
     // ----------------------------------------------------------------------------------------------------
@@ -80,75 +156,9 @@ namespace DV {
 
     void Logger::emit(LogLevel level, std::string_view payload)
     {
-        std::lock_guard<std::mutex> lock(_writeMutex);
-        this->buildHeader(level);
-        _buffer << payload;
-        this->write();
-    }
-
-    /**
-     * @brief Assembles the timestamp and log level tags at the start of a logged message.
-     * @param level
-     * — The kind of logging being done. (info, warning, error, etc.) This effects text coloring if logging is being
-     * done to a terminal.
-     */
-    void Logger::buildHeader(LogLevel level)
-    {
-        // Get the current time.
-        // By default, the time is represented in nanoseconds, but adding in the duration_cast helps future-proof
-        // the code a bit.
-        auto curTimeNanosecondPrecision = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
-
-        // Format the time as human readable.
-        // "%F %T" --> "%Y-%m-%d %H:%M:%S" --> "TZONE 2019-08-23 13:42:58\0" (26 chars)
-        char timeStr[26] = {0};
-        std::time_t curTimeSecondPrecision = curTimeNanosecondPrecision/1000000000; // Deliberate integer rounding.
-        std::strftime(timeStr, sizeof(timeStr), "%Z %F %T", std::localtime(&curTimeSecondPrecision));
-
-        // Finally, print the time stamp.
-        _buffer << '['
-            << timeStr
-            << ':'
-            << std::setw(9) << std::right << std::setfill('0')
-            << (curTimeNanosecondPrecision - curTimeSecondPrecision*1000000000)
-            << ']';
-        _buffer << ' ';
-
-        // Append logger name and level.
-        _buffer << '[';
-        _buffer << _name << ':';
-        if (_outputColorText) {
-            switch (level) {                                                                // Default Colors
-                case LogLevel::info:  _buffer << infoColor  << "INFO"  << resetColor; break;// Blue
-                case LogLevel::warn:  _buffer << warnColor  << "WARN"  << resetColor; break;// Yellow
-                case LogLevel::error: _buffer << errorColor << "ERROR" << resetColor; break;// Red
-                case LogLevel::fatal: _buffer << fatalColor << "FATAL" << resetColor; break;// Black on Red
-                case LogLevel::debug: _buffer << debugColor << "DEBUG" << resetColor; break;// Green
-                case LogLevel::trace: _buffer << traceColor << "TRACE" << resetColor; break;// Default terminal color.
-                default: break;
-            }
-        } else {
-            switch (level) {
-            case LogLevel::info:  _buffer << "INFO"; break;
-            case LogLevel::warn:  _buffer << "WARN"; break;
-            case LogLevel::error: _buffer << "ERROR"; break;
-            case LogLevel::fatal: _buffer << "FATAL"; break;
-            case LogLevel::debug: _buffer << "DEBUG"; break;
-            case LogLevel::trace: _buffer << "TRACE"; break;
-            default: break;
-            }
-        }
-        _buffer << "]\t";
-    }
-
-    /**
-     * @brief Copies the content of the buffer to the output stream(s) and clears the buffer.
-     */
-    void Logger::write() {
-        for (auto & streamItem : _streams) {
-            streamItem.get() << _buffer.str() << std::endl;
-        }
-        _buffer.str("");
+        std::lock_guard<std::mutex> lock(_impl->write_mutex);
+        _impl->buildHeader(level);
+        _impl->buffer << payload;
+        _impl->write();
     }
 }
