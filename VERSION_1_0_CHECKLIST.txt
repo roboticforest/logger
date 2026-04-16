@@ -1,0 +1,17 @@
+Library Version 1.0 Checklist
+
+Each line is +(1/9) to the minor version.
+Each "Bug" adds +1 to the patch (until next increment of minor).
+Each "Tweak" adds +1 to the tweak (until next increment of minor).
+
+[X] Print to any supplied output stream (console or file).
+[X] Print the name of the logger.
+[X] Print the logging level.
+[X] Print in color.
+[X] Bug - Print in color only when printing to cout so files are not filled with color codes.
+[X] Print a timestamp as precise as possible as YYYY-MM-DD HH:MM:SS:something (ended up being nanoseconds).
+[X] Tweak - Print out timezone.
+[ ] Option to append to log files. (Currently it always overwrites the entire file.)
+[X] Thread-safe logging. (Streams are already safe, but output from many can mix.)
+[X] Teed output (logging individual messages to terminal and file at the same time).
+[ ] Simple log file rotation. (File size limit.)

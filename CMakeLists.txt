@@ -1,101 +1,153 @@
 ####################################################################################################
-# All rights reserved © 2019-2025 David Vitez (AKA: Robotic Forest)
-# This software is the private intellectual property of David Vitez unless otherwise stated.
-#
-# Start Date: December 24th, 2019
-# Working Title: DV Logger
+# Project Setup
 ####################################################################################################
 
-####################################################################################################
-# General CMake project config.
-####################################################################################################
+cmake_minimum_required(VERSION 3.30...4.0)
+project(logger VERSION 0.77.4.0 LANGUAGES CXX)
 
-cmake_minimum_required(VERSION 3.23)  # Specify which version of CMake is being used here.
-
-# The following CMake files are a separate project and their exact path depends on programmer preference.
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-include(custom_config_file_helpers)
-
-# Set the names of each thing being built, this library project, the library itself, and the library tester app.
-set(PROJECT_NAME logger)
-set(LIBRARY_NAME dvlogger)
-set(PROGRAM_NAME logger_test)
-
-# Library Version 1.0 checklist
-# Each line is +(1/9) to the minor version.
-# Each "Bug" will add +1 to the patch (until next ++ of minor).
-# Each "Tweak" will add +1 to the tweak (until next ++ of minor).
-### X Print to any supplied output stream (console or file).
-### X Print the name of the logger.
-### X Print the logging level.
-### X Print in color.
-### X Bug - Print in color only when printing to cout so files aren't filled with garbage color codes.
-### X Print a timestamp as precise as possible as YYYY-MM-DD HH:MM:SS:something (ended up being nanoseconds).
-### X Tweak - print out timezone.
-### - Option to append to log files. (Currently it always overwrites the entire file.)
-### X Thread safe logging. (Streams are already safe, but output from many can mix.)
-### X Tee'd output (logging individual messages to terminal and file at the same time).
-### - Simple log file rotation. (File size limit.)
-project(${PROJECT_NAME} VERSION 0.77.4.0)
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+find_package(Threads REQUIRED)
 
 ####################################################################################################
-# Source code and compilation.
+# Build Options
 ####################################################################################################
 
-set(CMAKE_CXX_STANDARD 17)          # Specify which version of C++ we're using here.
-set(THREADS_PREFER_PTHREAD_FLAG ON) # This is a multithreaded library.
-find_package(Threads REQUIRED)      # Require threading support.
+option(DVLOGGER_BUILD_SHARED "Build shared library target." ON)
+option(DVLOGGER_BUILD_STATIC "Build static library target." ON)
+option(DVLOGGER_WARNINGS_AS_ERRORS "Treat compiler warnings as errors (MSVC only)." OFF)
 
-# Generate "logger_version.h" to provide the library's version info to its own C++ code.
-message(STATUS "Creating version header...")
-make_cpp_version_header(
-    NAME ${PROJECT_NAME}
-    VERSION ${PROJECT_VERSION}
-    PATH "."
-)
-
-# Build the logging library, setting compiler specific warning ond compilation flags where appropriate.
-set(SRC_FILES_LIB logger.cpp)
-set(SRC_FILES_TEST main.cpp)
-set(INC_FILES logger.h logger_version.h)
-# message("${SRC_FILES}") # For debugging this CMake file.
-add_library(${LIBRARY_NAME} STATIC "${SRC_FILES_LIB}")
-if ( CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU" )
-    # -fPIC makes "Position Independent Code" which will allow this library to be torn apart and integrated into
-    # other dynamic shared libraries and not just usable by executable files alone.
-    target_compile_options( ${LIBRARY_NAME} PRIVATE -Wall -Wextra -Wunreachable-code -Wpedantic -fPIC)
-endif()
-if ( CMAKE_CXX_COMPILER_ID MATCHES "MSVC" )
-    target_compile_options( ${LIBRARY_NAME} PRIVATE /WX /W4 )
+if(NOT DVLOGGER_BUILD_SHARED AND NOT DVLOGGER_BUILD_STATIC)
+    message(FATAL_ERROR "At least one of DVLOGGER_BUILD_SHARED or DVLOGGER_BUILD_STATIC must be ON.")
 endif()
 
-# Build the test program executable.
-add_executable(${PROGRAM_NAME} "${SRC_FILES_TEST}")
-target_link_libraries(${PROGRAM_NAME} PRIVATE ${LIBRARY_NAME} Threads::Threads)
-
-####################################################################################################
-# Packaging and export.
-####################################################################################################
-
-# Create library configuration files for other projects to use.
-# This generates both a <library_name>-config.cmake and a <library_name>-config-version.cmake.
-make_cmake_config_file(
-    NAME ${LIBRARY_NAME}
-    VAR_PREFIX ${PROJECT_NAME}
-    LIB_NAME ${LIBRARY_NAME}
-)
-make_cmake_config_version_file(
-    NAME ${LIBRARY_NAME}
-    VERSION ${PROJECT_VERSION}
+set(DVLOGGER_GENERATED_DIR "${PROJECT_BINARY_DIR}/generated")
+set(DVLOGGER_GENERATED_VERSION_HEADER "${DVLOGGER_GENERATED_DIR}/logger_version.h")
+file(MAKE_DIRECTORY "${DVLOGGER_GENERATED_DIR}")
+configure_file(
+    "${PROJECT_SOURCE_DIR}/cmake/logger_version.h.in"
+    "${DVLOGGER_GENERATED_VERSION_HEADER}"
+    @ONLY
 )
 
-# Prep for later packaging.
-# You must manually run `cmake --install <build-folder>` from the project root directory.
-# The project root directory should be the folder this file is contained in.
-set(PACKAGE_DEST "${PROJECT_SOURCE_DIR}/${LIBRARY_NAME}-${PROJECT_VERSION}-${CMAKE_BUILD_TYPE}")
-install(TARGETS ${LIBRARY_NAME} DESTINATION "${PACKAGE_DEST}/lib")
-install(TARGETS ${PROGRAM_NAME} DESTINATION "${PACKAGE_DEST}/bin")
-install(FILES ${INC_FILES} DESTINATION "${PACKAGE_DEST}/include")
-install(FILES "${PROJECT_BINARY_DIR}/${LIBRARY_NAME}-config.cmake" DESTINATION "${PACKAGE_DEST}/cmake")
-install(FILES "${PROJECT_BINARY_DIR}/${LIBRARY_NAME}-config-version.cmake" DESTINATION "${PACKAGE_DEST}/cmake")
+set(DVLOGGER_PUBLIC_HEADERS
+    "${PROJECT_SOURCE_DIR}/logger.h"
+    "${DVLOGGER_GENERATED_VERSION_HEADER}"
+)
+set(DVLOGGER_SOURCES
+    "${PROJECT_SOURCE_DIR}/logger.cpp"
+)
 
+####################################################################################################
+# Target Definitions
+####################################################################################################
+
+function(dvlogger_apply_common_target_config target_name)
+    target_sources("${target_name}" PRIVATE ${DVLOGGER_SOURCES})
+    target_compile_features("${target_name}" PUBLIC cxx_std_20)
+    target_include_directories("${target_name}"
+        PUBLIC
+            "$<BUILD_INTERFACE:${DVLOGGER_GENERATED_DIR}>"
+            "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>"
+            "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+    )
+    target_link_libraries("${target_name}" PUBLIC Threads::Threads)
+endfunction()
+
+function(dvlogger_apply_windows_warnings target_name)
+    if(MSVC)
+        target_compile_options("${target_name}" PRIVATE /W4 /permissive-)
+        if(DVLOGGER_WARNINGS_AS_ERRORS)
+            target_compile_options("${target_name}" PRIVATE /WX)
+        endif()
+    endif()
+endfunction()
+
+set(DVLOGGER_INSTALL_TARGETS)
+
+if(DVLOGGER_BUILD_SHARED)
+    add_library(dvlogger_shared SHARED)
+    dvlogger_apply_common_target_config(dvlogger_shared)
+    dvlogger_apply_windows_warnings(dvlogger_shared)
+    set_target_properties(dvlogger_shared PROPERTIES
+        OUTPUT_NAME dvlogger
+        EXPORT_NAME shared
+        WINDOWS_EXPORT_ALL_SYMBOLS ON
+    )
+    list(APPEND DVLOGGER_INSTALL_TARGETS dvlogger_shared)
+endif()
+
+if(DVLOGGER_BUILD_STATIC)
+    add_library(dvlogger_static STATIC)
+    dvlogger_apply_common_target_config(dvlogger_static)
+    dvlogger_apply_windows_warnings(dvlogger_static)
+    set_target_properties(dvlogger_static PROPERTIES
+        OUTPUT_NAME dvlogger_static
+        EXPORT_NAME static
+    )
+    list(APPEND DVLOGGER_INSTALL_TARGETS dvlogger_static)
+endif()
+
+####################################################################################################
+# Testing
+####################################################################################################
+
+include(CTest)
+
+if(BUILD_TESTING)
+    add_executable(dvlogger_smoke_test "${PROJECT_SOURCE_DIR}/tests/dvlogger_smoke_test.cpp")
+    target_compile_features(dvlogger_smoke_test PRIVATE cxx_std_20)
+    target_include_directories(dvlogger_smoke_test PRIVATE "${DVLOGGER_GENERATED_DIR}")
+
+    if(TARGET dvlogger_static)
+        target_link_libraries(dvlogger_smoke_test PRIVATE dvlogger_static)
+    else()
+        target_link_libraries(dvlogger_smoke_test PRIVATE dvlogger_shared)
+    endif()
+
+    add_test(NAME dvlogger.smoke COMMAND dvlogger_smoke_test)
+endif()
+
+####################################################################################################
+# Install And Package
+####################################################################################################
+
+set(DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/dvlogger")
+set(DVLOGGER_PACKAGE_CONFIG_FILE "${PROJECT_BINARY_DIR}/dvlogger-config.cmake")
+set(DVLOGGER_PACKAGE_VERSION_FILE "${PROJECT_BINARY_DIR}/dvlogger-config-version.cmake")
+
+configure_package_config_file(
+    "${PROJECT_SOURCE_DIR}/cmake/dvlogger-config.cmake.in"
+    "${DVLOGGER_PACKAGE_CONFIG_FILE}"
+    INSTALL_DESTINATION "${DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR}"
+)
+
+write_basic_package_version_file(
+    "${DVLOGGER_PACKAGE_VERSION_FILE}"
+    VERSION "${PROJECT_VERSION}"
+    COMPATIBILITY SameMajorVersion
+)
+
+install(TARGETS ${DVLOGGER_INSTALL_TARGETS}
+    EXPORT dvloggerTargets
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+)
+
+install(FILES ${DVLOGGER_PUBLIC_HEADERS}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+)
+
+install(EXPORT dvloggerTargets
+    FILE dvlogger-targets.cmake
+    NAMESPACE dvlogger::
+    DESTINATION "${DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR}"
+)
+
+install(FILES
+    "${DVLOGGER_PACKAGE_CONFIG_FILE}"
+    "${DVLOGGER_PACKAGE_VERSION_FILE}"
+    DESTINATION "${DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR}"
+)
