@@ -4,7 +4,7 @@
 #include <thread>
 
 #include "logger.h"
-#include "test_support.hpp"
+#include "../test_support.hpp"
 
 namespace {
 
