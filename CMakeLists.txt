@@ -16,6 +16,7 @@ find_package(Threads REQUIRED)
 option(DVLOGGER_BUILD_SHARED "Build shared library target." ON)
 option(DVLOGGER_BUILD_STATIC "Build static library target." ON)
 option(DVLOGGER_BUILD_DOCS "Build API documentation with Doxygen." ON)
+option(DVLOGGER_BUILD_INTERNAL_DOCS "Build private developer documentation with Doxygen." ON)
 option(DVLOGGER_ENABLE_MANUAL_TESTS "Enable manual/stress tests in CTest." OFF)
 
 if(NOT DVLOGGER_BUILD_SHARED AND NOT DVLOGGER_BUILD_STATIC)
@@ -100,26 +101,71 @@ endif()
 
 if(DVLOGGER_BUILD_DOCS)
     find_package(Doxygen REQUIRED COMPONENTS doxygen)
+    set(DVLOGGER_DOC_PROJECT_NUMBER "${PROJECT_VERSION}")
+    set(DVLOGGER_DOC_EXCLUDE_PATTERNS "*/.git/* */.svn/* */.hg/* */CMakeFiles/* */_CPack_Packages/* DartConfiguration.tcl CMakeLists.txt CMakeCache.txt")
 
-    set(DOXYGEN_PROJECT_NAME "Logger")
-    set(DOXYGEN_PROJECT_NUMBER "${PROJECT_VERSION}")
-    set(DOXYGEN_PROJECT_BRIEF "A simple C++ logging utility library.")
-    set(DOXYGEN_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc")
-    set(DOXYGEN_GENERATE_HTML YES)
-    set(DOXYGEN_GENERATE_LATEX NO)
-    set(DOXYGEN_QUIET YES)
-    set(DOXYGEN_RECURSIVE NO)
-    set(DOXYGEN_EXTRACT_ALL YES)
-    set(DOXYGEN_WARN_IF_UNDOCUMENTED NO)
-    set(DOXYGEN_WARNINGS NO)
-
-    doxygen_add_docs(docs
-        "${PROJECT_SOURCE_DIR}/logger.h"
-        "${PROJECT_SOURCE_DIR}/logger.cpp"
-        "${DVLOGGER_GENERATED_VERSION_HPP}"
-        ALL
-        COMMENT "Generating API documentation with Doxygen"
+    string(JOIN " " DVLOGGER_DOC_PUBLIC_INPUTS
+        "\"${PROJECT_SOURCE_DIR}/logger.h\""
+        "\"${DVLOGGER_GENERATED_VERSION_HPP}\""
     )
+    set(DVLOGGER_DOC_PUBLIC_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc/public")
+    set(DVLOGGER_DOC_PUBLIC_PROJECT_BRIEF "Public API reference for the Logger library.")
+    set(DVLOGGER_DOC_PUBLIC_EXCLUDE_SYMBOLS "DV::Logger::Impl")
+    set(DVLOGGER_DOC_PUBLIC_CONFIG_INPUT "${PROJECT_SOURCE_DIR}/cmake/Doxyfile.public.in")
+    set(DVLOGGER_DOC_PUBLIC_CONFIG_OUTPUT "${PROJECT_BINARY_DIR}/Doxyfile.docs_public")
+
+    configure_file(
+        "${DVLOGGER_DOC_PUBLIC_CONFIG_INPUT}"
+        "${DVLOGGER_DOC_PUBLIC_CONFIG_OUTPUT}"
+        @ONLY
+    )
+
+    add_custom_target(docs_public ALL
+        COMMAND "${DOXYGEN_EXECUTABLE}" "${DVLOGGER_DOC_PUBLIC_CONFIG_OUTPUT}"
+        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+        DEPENDS
+            "${DVLOGGER_DOC_PUBLIC_CONFIG_INPUT}"
+            "${PROJECT_SOURCE_DIR}/logger.h"
+            "${DVLOGGER_GENERATED_VERSION_HPP}"
+        COMMENT "Generating docs_public documentation with Doxygen"
+        VERBATIM
+    )
+
+    if(DVLOGGER_BUILD_INTERNAL_DOCS)
+        string(JOIN " " DVLOGGER_DOC_INTERNAL_INPUTS
+            "\"${PROJECT_SOURCE_DIR}/logger.h\""
+            "\"${PROJECT_SOURCE_DIR}/logger.cpp\""
+            "\"${DVLOGGER_GENERATED_VERSION_HPP}\""
+        )
+        set(DVLOGGER_DOC_INTERNAL_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc/internal")
+        set(DVLOGGER_DOC_INTERNAL_PROJECT_BRIEF "Private developer reference for the Logger library internals.")
+        set(DVLOGGER_DOC_INTERNAL_CONFIG_INPUT "${PROJECT_SOURCE_DIR}/cmake/Doxyfile.internal.in")
+        set(DVLOGGER_DOC_INTERNAL_CONFIG_OUTPUT "${PROJECT_BINARY_DIR}/Doxyfile.docs_internal")
+
+        configure_file(
+            "${DVLOGGER_DOC_INTERNAL_CONFIG_INPUT}"
+            "${DVLOGGER_DOC_INTERNAL_CONFIG_OUTPUT}"
+            @ONLY
+        )
+
+        add_custom_target(docs_internal
+            COMMAND "${DOXYGEN_EXECUTABLE}" "${DVLOGGER_DOC_INTERNAL_CONFIG_OUTPUT}"
+            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+            DEPENDS
+                "${DVLOGGER_DOC_INTERNAL_CONFIG_INPUT}"
+                "${PROJECT_SOURCE_DIR}/logger.h"
+                "${PROJECT_SOURCE_DIR}/logger.cpp"
+                "${DVLOGGER_GENERATED_VERSION_HPP}"
+            COMMENT "Generating docs_internal documentation with Doxygen"
+            VERBATIM
+        )
+    endif()
+
+    add_custom_target(docs_all)
+    add_dependencies(docs_all docs_public)
+    if(TARGET docs_internal)
+        add_dependencies(docs_all docs_internal)
+    endif()
 endif()
 
 ####################################################################################################
