@@ -8,9 +8,12 @@
 #define DV_LOGGER_H
 
 #include <iostream>
+#include <functional>
+#include <mutex>
 #include <sstream>
 #include <string>
-#include <mutex>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 /**
@@ -127,12 +130,30 @@ namespace DV {
          * will be accepted.
          */
         ///@{
-        template<typename... Message> void debug (Message... msg) { this->assemble(LogLevel::debug, msg...); }
-        template<typename... Message> void error (Message... msg) { this->assemble(LogLevel::error, msg...); }
-        template<typename... Message> void fatal (Message... msg) { this->assemble(LogLevel::fatal, msg...); }
-        template<typename... Message> void info  (Message... msg) { this->assemble(LogLevel::info,  msg...); }
-        template<typename... Message> void trace (Message... msg) { this->assemble(LogLevel::trace, msg...); }
-        template<typename... Message> void warn  (Message... msg) { this->assemble(LogLevel::warn,  msg...); }
+        template<typename... Message> void debug (Message&&... msg)
+        {
+            this->emit(LogLevel::debug, this->assemblePayload(std::forward<Message>(msg)...));
+        }
+        template<typename... Message> void error (Message&&... msg)
+        {
+            this->emit(LogLevel::error, this->assemblePayload(std::forward<Message>(msg)...));
+        }
+        template<typename... Message> void fatal (Message&&... msg)
+        {
+            this->emit(LogLevel::fatal, this->assemblePayload(std::forward<Message>(msg)...));
+        }
+        template<typename... Message> void info  (Message&&... msg)
+        {
+            this->emit(LogLevel::info, this->assemblePayload(std::forward<Message>(msg)...));
+        }
+        template<typename... Message> void trace (Message&&... msg)
+        {
+            this->emit(LogLevel::trace, this->assemblePayload(std::forward<Message>(msg)...));
+        }
+        template<typename... Message> void warn  (Message&&... msg)
+        {
+            this->emit(LogLevel::warn, this->assemblePayload(std::forward<Message>(msg)...));
+        }
         ///@}
 
     private:
@@ -169,27 +190,17 @@ namespace DV {
          */
         enum class LogLevel { info, warn, error, fatal, debug, trace };
 
-        template<typename... Message>
-        void assemble(LogLevel logLevel, Message... msg)
-        {
-            _writeMutex.lock();
-            this->buildHeader(logLevel);    // Add a header to the output buffer.
-            this->assemble(msg...);         // Add all message parts (via 1 of 2 assembly helpers) to the buffer.
-            this->write();                  // Write the finished message buffer to the output stream.
-            _writeMutex.unlock();
-        }
-
-        // First message assembly helper for when there are two or more parts.
+        // Keep variadic payload assembly in header-visible code, then hand off to non-template backend.
         template<typename First, typename... Rest>
-        void assemble(First first, Rest... rest)
+        std::string assemblePayload(First&& first, Rest&&... rest)
         {
-            _buffer << first << ' ';
-            this->assemble(rest...);
+            std::ostringstream payload;
+            payload << std::forward<First>(first);
+            ((payload << ' ' << std::forward<Rest>(rest)), ...);
+            return payload.str();
         }
 
-        // Second message assembly helper for when there is only one part.
-        template<typename Message>
-        void assemble(Message msg) { _buffer << msg; }
+        void emit(LogLevel, std::string_view payload);
 
         // First part of message assembly. Adds a header to the message based on the given logging level.
         void buildHeader(LogLevel);

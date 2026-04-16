@@ -12,6 +12,7 @@
 #include <chrono>
 #include <functional>
 #include <iomanip>
+#include <string_view>
 
 namespace DV {
 
@@ -76,6 +77,14 @@ namespace DV {
     // ----------------------------------------------------------------------------------------------------
     // Logger Private Interface
     // ----------------------------------------------------------------------------------------------------
+
+    void Logger::emit(LogLevel level, std::string_view payload)
+    {
+        std::lock_guard<std::mutex> lock(_writeMutex);
+        this->buildHeader(level);
+        _buffer << payload;
+        this->write();
+    }
 
     /**
      * @brief Assembles the timestamp and log level tags at the start of a logged message.

@@ -15,127 +15,56 @@ Goal: modernize logger internals toward C++20 modules with no behavior change.
 
 ---
 
-## Focus plan: Step 1 only (behavior freeze with tests)
+## Focus plan: Step 2 only (port logging backend seam)
 
 ### Objective
 
-Capture current logger behavior in tests before structural refactors, so later module/pImpl changes can be verified against a stable baseline.
+Introduce a stable non-template backend path for log emission so variadic templates become thin front-end adapters and future module/pImpl work can proceed without behavior drift.
 
 ### Scope
 
-- Output content and format (header + message assembly).
-- Log level labeling.
-- Multi-stream split behavior.
-- Existing threading expectations from current stress scenarios.
-- Version macros/basic integration expectations.
+- Preserve public API shape (`debug/error/fatal/info/trace/warn`) and output format.
+- Keep all existing lock timing and write sequencing behavior stable for this step.
+- Add one non-template backend call path in `logger.cpp` used by all public variadic entry points.
+- Avoid pImpl/module file moves in this step; this is seam creation only.
 
 ### Deliverables
 
-1. A new test suite that maps each major existing stress block into formal tests.
-2. Optional separation of fast tests vs stress tests (via labels).
-3. Deletion of root `main.cpp` after test parity is established.
-4. CI/local command guidance for running all tests and stress-only tests.
+1. `Logger` gets one internal non-template backend function for final emit.
+2. Public variadic methods become thin wrappers that:
+- assemble message text,
+- then call backend with `LogLevel` + assembled payload.
+3. Existing tests remain green with no output changes.
+4. Add a short code note explaining that the seam exists to enable module/pImpl migration in later steps.
 
 ### Execution strategy
 
-1. Introduce test organization under `tests/`:
-- `logger_format_tests.cpp`
-- `logger_stream_tests.cpp`
-- `logger_thread_tests.cpp`
-- `logger_failure_mode_tests.cpp` (for known bad-stream scenarios that should not crash test runner)
-- Keep existing `dvlogger_smoke_test.cpp` temporarily.
+1. Define the seam in class internals.
+- Add a private non-template method signature (target shape): `emit(LogLevel, std::string_view payload)`.
+- Keep `buildHeader()` and `write()` behavior unchanged initially.
 
-2. Convert each legacy stress block from `main.cpp` into targeted tests.
+2. Split message assembly from emission.
+- Keep variadic packing in header-visible code.
+- Change assembly helpers to produce payload text only (no header/write side effects).
+- Route all level methods through the shared backend.
 
-3. Preserve behavior, not style:
-- Do not “fix” behavior while writing baseline tests.
-- For fragile areas, assert only stable invariants.
+3. Centralize synchronization in backend.
+- Move lock ownership to the new backend function with RAII (`std::lock_guard<std::mutex>`).
+- Ensure header + payload + write remain one critical section exactly as today.
 
-4. Add test labels for runtime profile:
-- `unit` for fast deterministic checks.
-- `stress` for heavy loops / thread contention checks.
-- `manual` for tests that intentionally exercise dangerous patterns (if retained).
+4. Limit copy churn without changing behavior.
+- Prefer forwarding references in template wrappers where safe.
+- Preserve exact spacing and payload construction order.
 
-5. Remove `main.cpp` only after:
-- all mapped scenarios exist as tests,
-- builds pass in Debug,
-- CTest registration is complete.
+5. Keep this step behavior-neutral.
+- Do not fix timestamp formatting yet.
+- Do not alter split-stream/color behavior.
+- Do not change ownership/lifetime model yet.
 
----
-
-## Deconstructing `main.cpp` into formal tests
-
-This is the direct migration map for the existing test harness code blocks.
-
-### Block-by-block mapping
-
-1. `basicTest(DV::Logger&)`
-- New tests:
-  - `logs_all_levels_with_expected_level_tokens`
-  - `accepts_mixed_variadic_argument_types`
-  - `handles_single_argument_and_multi_argument_entries`
-- Assertions:
-  - output contains logger name + each level token (`INFO`, `WARN`, etc.)
-  - message tokens are present in expected order
-  - no missing spaces between assembled message parts
-
-2. `logLoop(DV::Logger&, int, int)`
-- New tests:
-  - `logs_expected_iteration_count_for_range`
-  - `rejects_invalid_range_and_reports_error`
-- Notes:
-  - Keep a moderate loop size for default test runtime.
-  - Add a stress variant with larger ranges under `stress` label.
-
-3. `threadTest(DV::Logger&)`
-- New tests:
-  - `concurrent_logging_produces_nonempty_ordered_lines`
-  - `concurrent_logging_preserves_line_integrity`
-- Assertions:
-  - expected rough line count exists
-  - each produced line starts with timestamp/header prefix pattern
-  - no obvious interleaving fragments (partial bracket/header corruption)
-
-4. `badStreamTest(DV::Logger&)`
-- New tests:
-  - `closed_file_stream_sets_stream_bad_state_after_write_attempt`
-  - `logger_continues_without_throwing_on_bad_stream`
-- Important:
-  - assert stream state transitions and non-crash behavior
-  - avoid assumptions about recovering closed file stream output
-
-5. `deadStreamTest(DV::Logger&)`
-- Recommendation:
-  - do not run as a normal automated test (intentionally invokes UB / possible crash).
-- Options:
-  - keep as disabled/manual-only documentation case, or
-  - remove from automated suite and document as unsupported unsafe use-case.
-
-6. `teeStreamTest()`
-- New tests:
-  - `addSplit_duplicates_output_to_multiple_streams`
-  - `split_streams_receive_same_message_payload`
-- Assertions:
-  - all captured outputs include same entry payload and headers.
-  - color behavior expectations remain minimal unless explicitly stable.
-
-7. Root `main()` custom scenario (`multilog` + 3 file splits + `threadTest`)
-- New test:
-  - `multistream_concurrent_stress_smoke`
-- Label:
-  - `stress`
-
-### Proposed removal path for `main.cpp`
-
-1. Port all blocks above.
-2. Confirm CTest runs green with equivalent coverage.
-3. Remove `main.cpp` from build inputs (if currently built) and delete file.
-4. Keep historical intent in test names and comments so original stress harness purpose is preserved.
-
----
-
-## Open questions before implementing Step 1
-
-1. Should dangerous scenarios (like deleted stream pointer usage) be kept as manual docs/tests or fully removed?
-2. Do you want strict format assertions for timestamp shape (`[TZ YYYY-MM-DD HH:MM:SS:NNNNNNNNN]`) or only token-level checks?
-3. Should heavy-count/thread stress tests run by default in local `ctest`, or be opt-in via label?
+6. Verify with the current test matrix.
+- `dvlogger.smoke`
+- `dvlogger.format`
+- `dvlogger.stream`
+- `dvlogger.thread`
+- `dvlogger.failure_mode`
+- Optional manual tests with `DVLOGGER_ENABLE_MANUAL_TESTS=ON`.
