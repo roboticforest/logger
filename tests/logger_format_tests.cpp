@@ -49,7 +49,7 @@ bool test_message_assembly_spacing()
 
     log.info("SingleMessage");
     log.info("Many", 5, 3.14, 'x');
-    log.info("Version", DV::Version::string);
+    log.info("Version", DV::Logger::Version::string);
 
     const std::vector<std::string> lines = split_lines(captured.str());
     bool ok = true;
@@ -60,7 +60,7 @@ bool test_message_assembly_spacing()
 
     ok &= expect(message_payload(lines[0]) == "SingleMessage", "Single argument payload mismatch.");
     ok &= expect(message_payload(lines[1]) == "Many 5 3.14 x", "Variadic payload spacing mismatch.");
-    ok &= expect(message_payload(lines[2]) == std::string("Version ") + std::string(DV::Version::string),
+    ok &= expect(message_payload(lines[2]) == std::string("Version ") + std::string(DV::Logger::Version::string),
                  "Version payload mismatch.");
     return ok;
 }

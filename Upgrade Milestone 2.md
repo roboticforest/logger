@@ -66,8 +66,8 @@ with no public include-based API path.
 
 4. Replace version macros with module exports:
 - example target:
-  - `export namespace DV::Version { inline constexpr int major = ...; ... }`
-  - `export inline constexpr std::string_view logger_version = "...";`
+  - `export class DV::Logger { struct Version { static inline constexpr int major = ...; ... }; ... };`
+  - `DV::Logger::Version::string` exposes semantic version text.
 
 ### Work breakdown
 

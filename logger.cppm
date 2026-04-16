@@ -16,19 +16,19 @@ module;
 export module logger;
 
 export namespace DV {
-    namespace Version {
-        inline constexpr std::string_view string = DVLOGGER_VERSION_STRING;
-        inline constexpr int major = DVLOGGER_VERSION_MAJOR;
-        inline constexpr int minor = DVLOGGER_VERSION_MINOR;
-        inline constexpr int patch = DVLOGGER_VERSION_PATCH;
-        inline constexpr int tweak = DVLOGGER_VERSION_TWEAK;
-    }
-
     class Logger {
     public:
         // ----------------------------------------------------------------------------------------------------
         // Constructors, destructors, and other setup functions.
         // ----------------------------------------------------------------------------------------------------
+
+        struct Version {
+            static inline constexpr std::string_view string = DVLOGGER_VERSION_STRING;
+            static inline constexpr int major = DVLOGGER_VERSION_MAJOR;
+            static inline constexpr int minor = DVLOGGER_VERSION_MINOR;
+            static inline constexpr int patch = DVLOGGER_VERSION_PATCH;
+            static inline constexpr int tweak = DVLOGGER_VERSION_TWEAK;
+        };
 
         explicit Logger(const char* name, std::ostream& os);
         void addSplit(std::ostream& os);
