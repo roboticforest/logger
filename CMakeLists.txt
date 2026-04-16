@@ -15,7 +15,6 @@ find_package(Threads REQUIRED)
 
 option(DVLOGGER_BUILD_SHARED "Build shared library target." ON)
 option(DVLOGGER_BUILD_STATIC "Build static library target." ON)
-option(DVLOGGER_WARNINGS_AS_ERRORS "Treat compiler warnings as errors (MSVC only)." OFF)
 option(DVLOGGER_BUILD_DOCS "Build API documentation with Doxygen." ON)
 
 if(NOT DVLOGGER_BUILD_SHARED AND NOT DVLOGGER_BUILD_STATIC)
@@ -24,24 +23,13 @@ endif()
 
 set(DVLOGGER_GENERATED_DIR "${PROJECT_BINARY_DIR}/generated")
 set(DVLOGGER_GENERATED_VERSION_HPP "${DVLOGGER_GENERATED_DIR}/version.hpp")
-set(DVLOGGER_GENERATED_VERSION_COMPAT_HEADER "${DVLOGGER_GENERATED_DIR}/logger_version.h")
 file(MAKE_DIRECTORY "${DVLOGGER_GENERATED_DIR}")
 configure_file(
     "${PROJECT_SOURCE_DIR}/cmake/version.hpp.in"
     "${DVLOGGER_GENERATED_VERSION_HPP}"
     @ONLY
 )
-configure_file(
-    "${PROJECT_SOURCE_DIR}/cmake/logger_version.h.in"
-    "${DVLOGGER_GENERATED_VERSION_COMPAT_HEADER}"
-    @ONLY
-)
 
-set(DVLOGGER_PUBLIC_HEADERS
-    "${PROJECT_SOURCE_DIR}/logger.h"
-    "${DVLOGGER_GENERATED_VERSION_HPP}"
-    "${DVLOGGER_GENERATED_VERSION_COMPAT_HEADER}"
-)
 set(DVLOGGER_SOURCES
     "${PROJECT_SOURCE_DIR}/logger.cpp"
 )
@@ -62,37 +50,46 @@ function(dvlogger_apply_common_target_config target_name)
     target_link_libraries("${target_name}" PUBLIC Threads::Threads)
 endfunction()
 
-function(dvlogger_apply_windows_warnings target_name)
-    if(MSVC)
-        target_compile_options("${target_name}" PRIVATE /W4 /permissive-)
-        if(DVLOGGER_WARNINGS_AS_ERRORS)
-            target_compile_options("${target_name}" PRIVATE /WX)
-        endif()
-    endif()
-endfunction()
-
 set(DVLOGGER_INSTALL_TARGETS)
+
+function(dvlogger_attach_public_headers target_name)
+    target_sources("${target_name}" PUBLIC
+        FILE_SET dvlogger_public_headers
+        TYPE HEADERS
+        BASE_DIRS "${PROJECT_SOURCE_DIR}"
+        FILES "${PROJECT_SOURCE_DIR}/logger.h"
+    )
+    target_sources("${target_name}" PUBLIC
+        FILE_SET dvlogger_generated_headers
+        TYPE HEADERS
+        BASE_DIRS "${DVLOGGER_GENERATED_DIR}"
+        FILES
+            "${DVLOGGER_GENERATED_VERSION_HPP}"
+    )
+endfunction()
 
 if(DVLOGGER_BUILD_SHARED)
     add_library(dvlogger_shared SHARED)
     dvlogger_apply_common_target_config(dvlogger_shared)
-    dvlogger_apply_windows_warnings(dvlogger_shared)
+    dvlogger_attach_public_headers(dvlogger_shared)
     set_target_properties(dvlogger_shared PROPERTIES
         OUTPUT_NAME dvlogger
         EXPORT_NAME shared
         WINDOWS_EXPORT_ALL_SYMBOLS ON
     )
+    add_library(dvlogger::shared ALIAS dvlogger_shared)
     list(APPEND DVLOGGER_INSTALL_TARGETS dvlogger_shared)
 endif()
 
 if(DVLOGGER_BUILD_STATIC)
     add_library(dvlogger_static STATIC)
     dvlogger_apply_common_target_config(dvlogger_static)
-    dvlogger_apply_windows_warnings(dvlogger_static)
+    dvlogger_attach_public_headers(dvlogger_static)
     set_target_properties(dvlogger_static PROPERTIES
         OUTPUT_NAME dvlogger_static
         EXPORT_NAME static
     )
+    add_library(dvlogger::static ALIAS dvlogger_static)
     list(APPEND DVLOGGER_INSTALL_TARGETS dvlogger_static)
 endif()
 
@@ -101,18 +98,26 @@ endif()
 ####################################################################################################
 
 if(DVLOGGER_BUILD_DOCS)
-    find_package(Doxygen REQUIRED)
+    find_package(Doxygen REQUIRED COMPONENTS doxygen)
 
-    set(DVLOGGER_DOXYFILE_IN "${PROJECT_SOURCE_DIR}/cmake/Doxyfile.in")
-    set(DVLOGGER_DOXYFILE_OUT "${PROJECT_BINARY_DIR}/Doxyfile")
-    set(DVLOGGER_DOXYGEN_OUTPUT_DIR "${PROJECT_BINARY_DIR}/doc")
-    configure_file("${DVLOGGER_DOXYFILE_IN}" "${DVLOGGER_DOXYFILE_OUT}" @ONLY)
+    set(DOXYGEN_PROJECT_NAME "Logger")
+    set(DOXYGEN_PROJECT_NUMBER "${PROJECT_VERSION}")
+    set(DOXYGEN_PROJECT_BRIEF "A simple C++ logging utility library.")
+    set(DOXYGEN_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc")
+    set(DOXYGEN_GENERATE_HTML YES)
+    set(DOXYGEN_GENERATE_LATEX NO)
+    set(DOXYGEN_QUIET YES)
+    set(DOXYGEN_RECURSIVE NO)
+    set(DOXYGEN_EXTRACT_ALL YES)
+    set(DOXYGEN_WARN_IF_UNDOCUMENTED NO)
+    set(DOXYGEN_WARNINGS NO)
 
-    add_custom_target(docs ALL
-        COMMAND "${DOXYGEN_EXECUTABLE}" "${DVLOGGER_DOXYFILE_OUT}"
-        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+    doxygen_add_docs(docs
+        "${PROJECT_SOURCE_DIR}/logger.h"
+        "${PROJECT_SOURCE_DIR}/logger.cpp"
+        "${DVLOGGER_GENERATED_VERSION_HPP}"
+        ALL
         COMMENT "Generating API documentation with Doxygen"
-        VERBATIM
     )
 endif()
 
@@ -142,6 +147,7 @@ endif()
 set(DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/dvlogger")
 set(DVLOGGER_PACKAGE_CONFIG_FILE "${PROJECT_BINARY_DIR}/dvlogger-config.cmake")
 set(DVLOGGER_PACKAGE_VERSION_FILE "${PROJECT_BINARY_DIR}/dvlogger-config-version.cmake")
+set(DVLOGGER_PACKAGE_TARGETS_FILE "dvloggerTargets.cmake")
 
 configure_package_config_file(
     "${PROJECT_SOURCE_DIR}/cmake/dvlogger-config.cmake.in"
@@ -160,15 +166,13 @@ install(TARGETS ${DVLOGGER_INSTALL_TARGETS}
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    FILE_SET dvlogger_public_headers DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+    FILE_SET dvlogger_generated_headers DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 )
 
-install(FILES ${DVLOGGER_PUBLIC_HEADERS}
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-)
-
 install(EXPORT dvloggerTargets
-    FILE dvlogger-targets.cmake
+    FILE "${DVLOGGER_PACKAGE_TARGETS_FILE}"
     NAMESPACE dvlogger::
     DESTINATION "${DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR}"
 )
