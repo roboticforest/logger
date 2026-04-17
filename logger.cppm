@@ -15,23 +15,8 @@ module;
 
 export module logger;
 
-/**
- * @brief "DV" is short for David Vitez.
- */
 export namespace DV {
-    /**
-     * @par Basic Usage
-     * Create an instance of logger by giving it a name and a stream to output to.
-     * @code
-     * DV::Logger log("Terminal Log", std::cout);
-     * float pi = 3.14;
-     * log.info("Simple test:", 5, pi, 'a', "b c");
-     * @endcode
-     * Output:
-     * @code
-     * > [TZONE YYYY-MM-DD HH:MM:SS:NS] [Terminal Log:INFO] Simple test: 5 3.14 a b c
-     * @endcode
-     */
+
     /**
      * @brief A simple logging tool.
      * @details This is a very simple logging tool built around std::ostream, which means it can write log entries to
@@ -40,6 +25,7 @@ export namespace DV {
      * the appropriate logging functions like info() or warn(). You can pass in any number of arguments to the logging
      * functions in any order you wish. Every argument must be printable via the usual stream output overloads (which
      * makes custom print formats easy to create), and each argument will automatically be separated with spaces.
+     * @see @ref log_levels
      */
     class Logger {
     public:
@@ -47,9 +33,7 @@ export namespace DV {
         // Constructors, destructors, and other setup functions.
         // ----------------------------------------------------------------------------------------------------
 
-        /**
-         * @brief Build/version information for this logger library.
-         */
+        /** @brief Build/version information for this logger library. */
         struct Version {
             static inline constexpr std::string_view string = DVLOGGER_VERSION_STRING;
             static inline constexpr int major = DVLOGGER_VERSION_MAJOR;
@@ -92,6 +76,7 @@ export namespace DV {
          * @name Primary Logging Functions
          * @brief These are the primary logging functions. Each call prints one log entry.
          * @details Each logging function takes an arbitrary list of arguments and converts them into one text payload.
+         * Level semantics are documented in @ref log_levels.
          * @param msg
          * The message arguments to record as one log entry payload.
          */

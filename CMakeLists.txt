@@ -95,6 +95,9 @@ if(DVLOGGER_BUILD_DOCS)
 
     string(JOIN " " DVLOGGER_DOC_PUBLIC_INPUTS
         "\"${PROJECT_SOURCE_DIR}/logger.cppm\""
+        "\"${PROJECT_SOURCE_DIR}/docs/basic-usage.md\""
+        "\"${PROJECT_SOURCE_DIR}/docs/log-levels.md\""
+        "\"${PROJECT_SOURCE_DIR}/docs/api-reference.md\""
     )
     set(DVLOGGER_DOC_PUBLIC_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc/public")
     set(DVLOGGER_DOC_PUBLIC_PROJECT_BRIEF "Public API reference for the Logger library.")
@@ -114,6 +117,9 @@ if(DVLOGGER_BUILD_DOCS)
         DEPENDS
             "${DVLOGGER_DOC_PUBLIC_CONFIG_INPUT}"
             "${PROJECT_SOURCE_DIR}/logger.cppm"
+            "${PROJECT_SOURCE_DIR}/docs/basic-usage.md"
+            "${PROJECT_SOURCE_DIR}/docs/log-levels.md"
+            "${PROJECT_SOURCE_DIR}/docs/api-reference.md"
         COMMENT "Generating docs_public documentation with Doxygen"
         VERBATIM
     )
@@ -122,6 +128,9 @@ if(DVLOGGER_BUILD_DOCS)
         string(JOIN " " DVLOGGER_DOC_INTERNAL_INPUTS
             "\"${PROJECT_SOURCE_DIR}/logger.cppm\""
             "\"${PROJECT_SOURCE_DIR}/logger.cpp\""
+            "\"${PROJECT_SOURCE_DIR}/docs/basic-usage.md\""
+            "\"${PROJECT_SOURCE_DIR}/docs/log-levels.md\""
+            "\"${PROJECT_SOURCE_DIR}/docs/api-reference.md\""
         )
         set(DVLOGGER_DOC_INTERNAL_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc/internal")
         set(DVLOGGER_DOC_INTERNAL_PROJECT_BRIEF "Private developer reference for the Logger library internals.")
@@ -141,6 +150,9 @@ if(DVLOGGER_BUILD_DOCS)
                 "${DVLOGGER_DOC_INTERNAL_CONFIG_INPUT}"
                 "${PROJECT_SOURCE_DIR}/logger.cppm"
                 "${PROJECT_SOURCE_DIR}/logger.cpp"
+                "${PROJECT_SOURCE_DIR}/docs/basic-usage.md"
+                "${PROJECT_SOURCE_DIR}/docs/log-levels.md"
+                "${PROJECT_SOURCE_DIR}/docs/api-reference.md"
             COMMENT "Generating docs_internal documentation with Doxygen"
             VERBATIM
         )
