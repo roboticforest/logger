@@ -3,7 +3,7 @@
 ####################################################################################################
 
 cmake_minimum_required(VERSION 4.0)
-project(logger VERSION 0.77.4.0 LANGUAGES CXX)
+project(logger VERSION 0.90.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
