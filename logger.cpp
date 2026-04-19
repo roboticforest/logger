@@ -1,7 +1,7 @@
 /**
  * @file
  * @author David Vitez (AKA: Robotic Forest)
- * @copyright All rights reserved (c) 2020 David Vitez
+ * @copyright All rights reserved (c) 2020-2026 David Vitez
  */
 
 module;
