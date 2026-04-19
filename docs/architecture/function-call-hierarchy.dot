@@ -1,0 +1,147 @@
+digraph LoggerCallHierarchy {
+    graph [
+        rankdir=LR,
+        splines=ortho,
+        compound=true,
+        pad=0.3,
+        nodesep=0.6,
+        ranksep=1.1,
+        fontname="Helvetica",
+        fontsize=18,
+        label="DV::Logger Function Call Hierarchy",
+        labelloc=t
+    ];
+
+    node [
+        shape=box,
+        style="rounded,filled",
+        fontname="Helvetica",
+        fontsize=11,
+        color="#284b63",
+        fillcolor="#f5fbff",
+        margin="0.12,0.08"
+    ];
+
+    edge [
+        color="#4f6d7a",
+        arrowsize=0.8,
+        penwidth=1.2
+    ];
+
+    subgraph cluster_public_api {
+        label="Public API";
+        color="#9fc5e8";
+        style="rounded";
+
+        {
+            rank=same;
+            ctor [label="Logger::Logger(const char*, std::ostream&)"];
+            add_split [label="Logger::addSplit(std::ostream&)"];
+            dtor [label="Logger::~Logger()", fillcolor="#f7f7f7", color="#999999"];
+        }
+
+        {
+            rank=same;
+            info [label="Logger::info(...)"];
+            warn [label="Logger::warn(...)"];
+            error [label="Logger::error(...)"];
+            fatal [label="Logger::fatal(...)"];
+            debug [label="Logger::debug(...)"];
+            trace [label="Logger::trace(...)"];
+        }
+    }
+
+    subgraph cluster_private_seam {
+        label="Private Logger Helpers";
+        color="#b6d7a8";
+        style="rounded";
+
+        {
+            rank=same;
+            assemble [label="Logger::assemblePayload(...)"];
+            emit [label="Logger::emit(LogLevel, std::string_view)"];
+        }
+    }
+
+    subgraph cluster_impl {
+        label="pImpl Backend";
+        color="#f9cb9c";
+        style="rounded";
+
+        {
+            rank=same;
+            impl_ctor [label="Logger::Impl::Impl(...)"];
+            impl_add_split [label="Logger::Impl::addSplit(std::ostream&)"];
+            impl_build_header [label="Logger::Impl::buildHeader(LogLevel)"];
+            impl_write [label="Logger::Impl::write()"];
+        }
+    }
+
+    subgraph cluster_color {
+        label="Color Manipulators";
+        color="#d9c2f0";
+        style="rounded";
+
+        {
+            rank=same;
+            info_color [label="infoColor(std::ostream&)"];
+            warn_color [label="warnColor(std::ostream&)"];
+            error_color [label="errorColor(std::ostream&)"];
+            fatal_color [label="fatalColor(std::ostream&)"];
+            debug_color [label="debugColor(std::ostream&)"];
+            trace_color [label="traceColor(std::ostream&)"];
+            reset_color [label="resetColor(std::ostream&)"];
+        }
+    }
+
+    info -> warn [style=invis, weight=10];
+    warn -> error [style=invis, weight=10];
+    error -> fatal [style=invis, weight=10];
+    fatal -> debug [style=invis, weight=10];
+    debug -> trace [style=invis, weight=10];
+
+    impl_ctor -> impl_add_split [style=invis, weight=10];
+    impl_add_split -> impl_build_header [style=invis, weight=10];
+    impl_build_header -> impl_write [style=invis, weight=10];
+
+    info_color -> warn_color [style=invis, weight=10];
+    warn_color -> error_color [style=invis, weight=10];
+    error_color -> fatal_color [style=invis, weight=10];
+    fatal_color -> debug_color [style=invis, weight=10];
+    debug_color -> trace_color [style=invis, weight=10];
+    trace_color -> reset_color [style=invis, weight=10];
+
+    ctor -> impl_ctor;
+    add_split -> impl_add_split;
+
+    info -> assemble [weight=3];
+    info -> emit [weight=3];
+    warn -> assemble [weight=3];
+    warn -> emit [weight=3];
+    error -> assemble [weight=3];
+    error -> emit [weight=3];
+    fatal -> assemble [weight=3];
+    fatal -> emit [weight=3];
+    debug -> assemble [weight=3];
+    debug -> emit [weight=3];
+    trace -> assemble [weight=3];
+    trace -> emit [weight=3];
+
+    emit -> impl_build_header [weight=4];
+    emit -> impl_write [weight=4];
+
+    impl_build_header -> info_color [xlabel="info", weight=2];
+    impl_build_header -> warn_color [xlabel="warn", weight=2];
+    impl_build_header -> error_color [xlabel="error", weight=2];
+    impl_build_header -> fatal_color [xlabel="fatal", weight=2];
+    impl_build_header -> debug_color [xlabel="debug", weight=2];
+    impl_build_header -> trace_color [xlabel="trace", weight=2];
+
+    info_color -> reset_color [style=dashed, xlabel="paired in header"];
+    warn_color -> reset_color [style=dashed, xlabel="paired in header"];
+    error_color -> reset_color [style=dashed, xlabel="paired in header"];
+    fatal_color -> reset_color [style=dashed, xlabel="paired in header"];
+    debug_color -> reset_color [style=dashed, xlabel="paired in header"];
+    trace_color -> reset_color [style=dashed, xlabel="paired in header"];
+
+}
