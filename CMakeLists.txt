@@ -16,7 +16,7 @@ include(CTest)
 
 find_package(Threads REQUIRED)
 
-option(DVLOGGER_BUILD_DOCS "Build Doxygen documentation." OFF)
+option(DVLOGGER_BUILD_DOCS "Build Doxygen documentation." ON)
 option(DVLOGGER_ENABLE_MANUAL_TESTS "Enable manual/stress tests in CTest." OFF)
 option(DVLOGGER_ENABLE_INSTALL "Enable install/export rules." ON)
 
@@ -142,7 +142,7 @@ if(BUILD_TESTING)
         set_tests_properties("${target_name}" PROPERTIES LABELS "${test_labels}")
 
         add_custom_target("run_${target_name}"
-            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>" -R "^${target_name}$"
+            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>" -R "${target_name}"
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
             USES_TERMINAL
             DEPENDS "${target_name}"
@@ -214,7 +214,7 @@ if(BUILD_TESTING)
         set_tests_properties(dvlogger_installation_smoke_test PROPERTIES LABELS "integration;install")
 
         add_custom_target(run_dvlogger_installation_smoke_test
-            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>" -R "^dvlogger_installation_smoke_test$"
+            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>" -R "dvlogger_installation_smoke_test"
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
             USES_TERMINAL
             DEPENDS dvlogger_shared dvlogger_static
