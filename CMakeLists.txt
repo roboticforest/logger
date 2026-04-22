@@ -79,19 +79,18 @@ add_library(DV::LoggerStatic ALIAS dvlogger_static)
 ####################################################################################################
 
 if(DVLOGGER_ENABLE_INSTALL)
-    set(DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/DVLogger")
-    set(DVLOGGER_PACKAGE_CONFIG_FILE "${PROJECT_BINARY_DIR}/DVLoggerConfig.cmake")
-    set(DVLOGGER_PACKAGE_VERSION_FILE "${PROJECT_BINARY_DIR}/DVLoggerConfigVersion.cmake")
-    set(DVLOGGER_PACKAGE_TARGETS_FILE "DVLoggerTargets.cmake")
+    set(dvlogger_package_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+    set(dvlogger_package_config "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake")
+    set(dvlogger_package_version "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake")
 
     configure_package_config_file(
-        "${PROJECT_SOURCE_DIR}/cmake/DVLoggerConfig.cmake.in"
-        "${DVLOGGER_PACKAGE_CONFIG_FILE}"
-        INSTALL_DESTINATION "${DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR}"
+        "${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in"
+        "${dvlogger_package_config}"
+        INSTALL_DESTINATION "${dvlogger_package_dir}"
     )
 
     write_basic_package_version_file(
-        "${DVLOGGER_PACKAGE_VERSION_FILE}"
+        "${dvlogger_package_version}"
         VERSION "${PROJECT_VERSION}"
         COMPATIBILITY SameMajorVersion
     )
@@ -107,15 +106,15 @@ if(DVLOGGER_ENABLE_INSTALL)
     )
 
     install(EXPORT DVLoggerTargets
-        FILE "${DVLOGGER_PACKAGE_TARGETS_FILE}"
+        FILE "${PROJECT_NAME}Targets.cmake"
         NAMESPACE DV::
-        DESTINATION "${DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR}"
+        DESTINATION "${dvlogger_package_dir}"
     )
 
     install(FILES
-        "${DVLOGGER_PACKAGE_CONFIG_FILE}"
-        "${DVLOGGER_PACKAGE_VERSION_FILE}"
-        DESTINATION "${DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR}"
+        "${dvlogger_package_config}"
+        "${dvlogger_package_version}"
+        DESTINATION "${dvlogger_package_dir}"
     )
 endif()
 
