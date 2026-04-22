@@ -123,45 +123,26 @@ endif()
 ####################################################################################################
 
 if(BUILD_TESTING)
-    set(DVLOGGER_TEST_LINK_TARGET dvlogger_static)
-    set(DVLOGGER_UNIT_TEST_TARGETS)
-    set(DVLOGGER_MANUAL_TEST_TARGETS)
+    set(DVLOGGER_UNIT_TEST_TARGETS
+        dvlogger_smoke_test
+        dvlogger_format_test
+        dvlogger_stream_test
+        dvlogger_thread_test
+        dvlogger_failure_mode_test
+    )
+    set(DVLOGGER_MANUAL_TEST_TARGETS
+        dvlogger_stress_manual_test
+        dvlogger_dead_stream_manual_test
+    )
 
-    function(dvlogger_add_ctest_runner target_name)
-        set(options)
-        set(one_value_args LABEL REGEX)
-        set(multi_value_args DEPENDS)
-        cmake_parse_arguments(DVLOGGER_RUNNER "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+    string(REPLACE ";" "\\;" DVLOGGER_TEST_ENV_INCLUDE "$ENV{INCLUDE}")
+    string(REPLACE ";" "\\;" DVLOGGER_TEST_ENV_LIB "$ENV{LIB}")
+    string(REPLACE ";" "\\;" DVLOGGER_TEST_ENV_LIBPATH "$ENV{LIBPATH}")
 
-        set(dvlogger_runner_command
-            "${CMAKE_CTEST_COMMAND}"
-            --output-on-failure
-        )
-        if(DVLOGGER_RUNNER_LABEL)
-            list(APPEND dvlogger_runner_command -L "${DVLOGGER_RUNNER_LABEL}")
-        endif()
-        if(DVLOGGER_RUNNER_REGEX)
-            list(APPEND dvlogger_runner_command -R "${DVLOGGER_RUNNER_REGEX}")
-        endif()
-
-        add_custom_target("${target_name}"
-            COMMAND ${dvlogger_runner_command}
-            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
-            USES_TERMINAL
-            DEPENDS
-                ${DVLOGGER_RUNNER_DEPENDS}
-        )
-    endfunction()
-
-    function(dvlogger_escape_semicolons output_var input_value)
-        string(REPLACE ";" "\\;" dvlogger_escaped_value "${input_value}")
-        set("${output_var}" "${dvlogger_escaped_value}" PARENT_SCOPE)
-    endfunction()
-
-    function(dvlogger_add_cpp_test target_name source_file test_group test_labels)
+    function(dvlogger_add_cpp_test target_name source_file test_labels)
         add_executable("${target_name}" "${source_file}")
         target_compile_features("${target_name}" PRIVATE cxx_std_20)
-        target_link_libraries("${target_name}" PRIVATE "${DVLOGGER_TEST_LINK_TARGET}")
+        target_link_libraries("${target_name}" PRIVATE dvlogger_static)
         add_test(
             NAME "${target_name}"
             COMMAND
@@ -176,89 +157,63 @@ if(BUILD_TESTING)
                 "-P"
                 "${PROJECT_SOURCE_DIR}/tests/run_built_test.cmake"
         )
-        set_tests_properties("${target_name}" PROPERTIES LABELS "${test_group};${test_labels}")
+        set_tests_properties("${target_name}" PROPERTIES LABELS "${test_labels}")
 
-        if(test_group STREQUAL "manual")
-            list(APPEND DVLOGGER_MANUAL_TEST_TARGETS "${target_name}")
-            set(DVLOGGER_MANUAL_TEST_TARGETS "${DVLOGGER_MANUAL_TEST_TARGETS}" PARENT_SCOPE)
-        else()
-            list(APPEND DVLOGGER_UNIT_TEST_TARGETS "${target_name}")
-            set(DVLOGGER_UNIT_TEST_TARGETS "${DVLOGGER_UNIT_TEST_TARGETS}" PARENT_SCOPE)
-        endif()
-
-        dvlogger_add_ctest_runner(
-            "run_${target_name}"
-            REGEX "${target_name}"
+        add_custom_target("run_${target_name}"
+            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -R "^${target_name}$"
+            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+            USES_TERMINAL
             DEPENDS "${target_name}"
         )
     endfunction()
 
-    dvlogger_escape_semicolons(DVLOGGER_TEST_ENV_INCLUDE "$ENV{INCLUDE}")
-    dvlogger_escape_semicolons(DVLOGGER_TEST_ENV_LIB "$ENV{LIB}")
-    dvlogger_escape_semicolons(DVLOGGER_TEST_ENV_LIBPATH "$ENV{LIBPATH}")
-
     dvlogger_add_cpp_test(
         dvlogger_smoke_test
         "${PROJECT_SOURCE_DIR}/tests/logging_smoke_test.cpp"
-        unit
-        "smoke"
+        "unit;smoke"
     )
     dvlogger_add_cpp_test(
         dvlogger_format_test
         "${PROJECT_SOURCE_DIR}/tests/format_tests.cpp"
-        unit
-        "format"
+        "unit;format"
     )
     dvlogger_add_cpp_test(
         dvlogger_stream_test
         "${PROJECT_SOURCE_DIR}/tests/stream_tests.cpp"
-        unit
-        "stream"
+        "unit;stream"
     )
     dvlogger_add_cpp_test(
         dvlogger_thread_test
         "${PROJECT_SOURCE_DIR}/tests/simple_threading_tests.cpp"
-        unit
-        "thread"
+        "unit;thread"
     )
     dvlogger_add_cpp_test(
         dvlogger_failure_mode_test
         "${PROJECT_SOURCE_DIR}/tests/failure_mode_tests.cpp"
-        unit
-        "failure_mode"
+        "unit;failure_mode"
     )
 
     if(DVLOGGER_ENABLE_MANUAL_TESTS)
         dvlogger_add_cpp_test(
             dvlogger_stress_manual_test
             "${PROJECT_SOURCE_DIR}/tests/manual/threading_stress_manual_test.cpp"
-            manual
-            "stress"
+            "manual;stress"
         )
         dvlogger_add_cpp_test(
             dvlogger_dead_stream_manual_test
             "${PROJECT_SOURCE_DIR}/tests/manual/dead_stream_manual_test.cpp"
-            manual
-            "failure_mode"
+            "manual;failure_mode"
         )
     endif()
 
-    dvlogger_add_ctest_runner(
-        dvlogger_tests_unit
-        LABEL unit
+    add_custom_target(dvlogger_tests_unit
+        COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -L unit
+        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+        USES_TERMINAL
         DEPENDS ${DVLOGGER_UNIT_TEST_TARGETS}
     )
     add_custom_target(dvlogger_tests_normal DEPENDS dvlogger_tests_unit)
-    dvlogger_add_ctest_runner(
-        dvlogger_tests_manual
-        LABEL manual
-        DEPENDS ${DVLOGGER_MANUAL_TEST_TARGETS}
-    )
-
-    set(DVLOGGER_ALL_TEST_BUILD_TARGETS
-        ${DVLOGGER_UNIT_TEST_TARGETS}
-        ${DVLOGGER_MANUAL_TEST_TARGETS}
-    )
+    set(DVLOGGER_ALL_TEST_TARGETS ${DVLOGGER_UNIT_TEST_TARGETS})
 
     if(DVLOGGER_ENABLE_INSTALL)
         add_test(
@@ -280,18 +235,41 @@ if(BUILD_TESTING)
         )
         set_tests_properties(dvlogger_installation_smoke_test PROPERTIES LABELS "integration;install")
 
-        dvlogger_add_ctest_runner(
-            run_dvlogger_installation_smoke_test
-            REGEX "dvlogger_installation_smoke_test"
+        add_custom_target(run_dvlogger_installation_smoke_test
+            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -R "^dvlogger_installation_smoke_test$"
+            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+            USES_TERMINAL
             DEPENDS dvlogger_shared dvlogger_static
         )
-        list(APPEND DVLOGGER_ALL_TEST_BUILD_TARGETS dvlogger_shared dvlogger_static)
+        list(APPEND DVLOGGER_ALL_TEST_TARGETS dvlogger_shared dvlogger_static)
     endif()
 
-    dvlogger_add_ctest_runner(
-        dvlogger_tests_all
-        DEPENDS ${DVLOGGER_ALL_TEST_BUILD_TARGETS}
-    )
+    if(DVLOGGER_ENABLE_MANUAL_TESTS)
+        list(APPEND DVLOGGER_ALL_TEST_TARGETS ${DVLOGGER_MANUAL_TEST_TARGETS})
+        add_custom_target(dvlogger_tests_manual
+            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -L manual
+            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+            USES_TERMINAL
+            DEPENDS ${DVLOGGER_MANUAL_TEST_TARGETS}
+        )
+        add_custom_target(dvlogger_tests_all
+            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure
+            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+            USES_TERMINAL
+            DEPENDS ${DVLOGGER_ALL_TEST_TARGETS}
+        )
+    else()
+        add_custom_target(dvlogger_tests_manual
+            COMMAND "${CMAKE_COMMAND}" -E echo "Manual tests are disabled."
+            USES_TERMINAL
+        )
+        add_custom_target(dvlogger_tests_all
+            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure
+            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+            USES_TERMINAL
+            DEPENDS ${DVLOGGER_ALL_TEST_TARGETS}
+        )
+    endif()
 endif()
 
 ####################################################################################################
