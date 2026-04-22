@@ -16,8 +16,7 @@ include(CTest)
 
 find_package(Threads REQUIRED)
 
-option(DVLOGGER_BUILD_PUBLIC_DOCS "Build API documentation with Doxygen." ON)
-option(DVLOGGER_BUILD_INTERNAL_DOCS "Build private developer documentation with Doxygen." ON)
+option(DVLOGGER_BUILD_DOCS "Build Doxygen documentation." OFF)
 option(DVLOGGER_ENABLE_MANUAL_TESTS "Enable manual/stress tests in CTest." OFF)
 option(DVLOGGER_ENABLE_INSTALL "Enable install/export rules." ON)
 
@@ -256,7 +255,7 @@ endif()
 # Docs
 ####################################################################################################
 
-if(DVLOGGER_BUILD_PUBLIC_DOCS)
+if(DVLOGGER_BUILD_DOCS)
     find_package(Doxygen REQUIRED COMPONENTS doxygen)
     set(DVLOGGER_DOC_PROJECT_NUMBER "${PROJECT_VERSION}")
     set(DVLOGGER_DOC_EXCLUDE_PATTERNS "*/.git/* */.svn/* */.hg/* */CMakeFiles/* */_CPack_Packages/* DartConfiguration.tcl CMakeLists.txt CMakeCache.txt")
@@ -275,16 +274,27 @@ if(DVLOGGER_BUILD_PUBLIC_DOCS)
         ${DVLOGGER_DOC_PUBLIC_INPUT_FILES}
         "${PROJECT_SOURCE_DIR}/logger.cpp"
     )
-    set(DVLOGGER_DOC_PUBLIC_INPUTS ${DVLOGGER_DOC_PUBLIC_INPUT_FILES})
-    list(TRANSFORM DVLOGGER_DOC_PUBLIC_INPUTS PREPEND "\"")
-    list(TRANSFORM DVLOGGER_DOC_PUBLIC_INPUTS APPEND "\"")
-    string(JOIN " " DVLOGGER_DOC_PUBLIC_INPUTS ${DVLOGGER_DOC_PUBLIC_INPUTS})
+    string(JOIN " " DVLOGGER_DOC_PUBLIC_INPUTS
+        "\"${PROJECT_SOURCE_DIR}/logger.cppm\""
+        "\"${PROJECT_SOURCE_DIR}/docs/basic-usage.md\""
+        "\"${PROJECT_SOURCE_DIR}/docs/log-levels.md\""
+        "\"${PROJECT_SOURCE_DIR}/docs/api-reference.md\""
+    )
+    string(JOIN " " DVLOGGER_DOC_INTERNAL_INPUTS
+        ${DVLOGGER_DOC_PUBLIC_INPUTS}
+        "\"${PROJECT_SOURCE_DIR}/logger.cpp\""
+    )
     set(DVLOGGER_DOC_PUBLIC_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc/public")
     set(DVLOGGER_DOC_PUBLIC_PROJECT_BRIEF "Public API reference for the Logger library.")
     set(DVLOGGER_DOC_PUBLIC_EXCLUDE_SYMBOLS "DV::Logger::Impl")
     set(DVLOGGER_DOC_PUBLIC_HTML_FOOTER "${DVLOGGER_DOC_FOOTER_OUTPUT}")
     set(DVLOGGER_DOC_PUBLIC_CONFIG_INPUT "${PROJECT_SOURCE_DIR}/cmake/Doxyfile.public.in")
     set(DVLOGGER_DOC_PUBLIC_CONFIG_OUTPUT "${PROJECT_BINARY_DIR}/Doxyfile.docs_public")
+    set(DVLOGGER_DOC_INTERNAL_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc/internal")
+    set(DVLOGGER_DOC_INTERNAL_PROJECT_BRIEF "Private developer reference for the Logger library internals.")
+    set(DVLOGGER_DOC_INTERNAL_HTML_FOOTER "${DVLOGGER_DOC_FOOTER_OUTPUT}")
+    set(DVLOGGER_DOC_INTERNAL_CONFIG_INPUT "${PROJECT_SOURCE_DIR}/cmake/Doxyfile.internal.in")
+    set(DVLOGGER_DOC_INTERNAL_CONFIG_OUTPUT "${PROJECT_BINARY_DIR}/Doxyfile.docs_internal")
 
     configure_file(
         "${DVLOGGER_DOC_FOOTER_INPUT}"
@@ -298,7 +308,13 @@ if(DVLOGGER_BUILD_PUBLIC_DOCS)
         @ONLY
     )
 
-    add_custom_target(docs_public ALL
+    configure_file(
+        "${DVLOGGER_DOC_INTERNAL_CONFIG_INPUT}"
+        "${DVLOGGER_DOC_INTERNAL_CONFIG_OUTPUT}"
+        @ONLY
+    )
+
+    add_custom_target(docs_public
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${DVLOGGER_DOC_PUBLIC_OUTPUT_DIRECTORY}"
         COMMAND "${DOXYGEN_EXECUTABLE}" "${DVLOGGER_DOC_PUBLIC_CONFIG_OUTPUT}"
         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
@@ -309,38 +325,16 @@ if(DVLOGGER_BUILD_PUBLIC_DOCS)
         VERBATIM
     )
 
-    if(DVLOGGER_BUILD_INTERNAL_DOCS)
-        set(DVLOGGER_DOC_INTERNAL_INPUTS ${DVLOGGER_DOC_INTERNAL_INPUT_FILES})
-        list(TRANSFORM DVLOGGER_DOC_INTERNAL_INPUTS PREPEND "\"")
-        list(TRANSFORM DVLOGGER_DOC_INTERNAL_INPUTS APPEND "\"")
-        string(JOIN " " DVLOGGER_DOC_INTERNAL_INPUTS ${DVLOGGER_DOC_INTERNAL_INPUTS})
-        set(DVLOGGER_DOC_INTERNAL_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc/internal")
-        set(DVLOGGER_DOC_INTERNAL_PROJECT_BRIEF "Private developer reference for the Logger library internals.")
-        set(DVLOGGER_DOC_INTERNAL_HTML_FOOTER "${DVLOGGER_DOC_FOOTER_OUTPUT}")
-        set(DVLOGGER_DOC_INTERNAL_CONFIG_INPUT "${PROJECT_SOURCE_DIR}/cmake/Doxyfile.internal.in")
-        set(DVLOGGER_DOC_INTERNAL_CONFIG_OUTPUT "${PROJECT_BINARY_DIR}/Doxyfile.docs_internal")
-
-        configure_file(
+    add_custom_target(docs_internal
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${DVLOGGER_DOC_INTERNAL_OUTPUT_DIRECTORY}"
+        COMMAND "${DOXYGEN_EXECUTABLE}" "${DVLOGGER_DOC_INTERNAL_CONFIG_OUTPUT}"
+        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+        DEPENDS
             "${DVLOGGER_DOC_INTERNAL_CONFIG_INPUT}"
-            "${DVLOGGER_DOC_INTERNAL_CONFIG_OUTPUT}"
-            @ONLY
-        )
+            ${DVLOGGER_DOC_INTERNAL_INPUT_FILES}
+        COMMENT "Generating docs_internal documentation with Doxygen"
+        VERBATIM
+    )
 
-        add_custom_target(docs_internal
-            COMMAND "${CMAKE_COMMAND}" -E make_directory "${DVLOGGER_DOC_INTERNAL_OUTPUT_DIRECTORY}"
-            COMMAND "${DOXYGEN_EXECUTABLE}" "${DVLOGGER_DOC_INTERNAL_CONFIG_OUTPUT}"
-            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
-            DEPENDS
-                "${DVLOGGER_DOC_INTERNAL_CONFIG_INPUT}"
-                ${DVLOGGER_DOC_INTERNAL_INPUT_FILES}
-            COMMENT "Generating docs_internal documentation with Doxygen"
-            VERBATIM
-        )
-    endif()
-
-    add_custom_target(docs_all)
-    add_dependencies(docs_all docs_public)
-    if(TARGET docs_internal)
-        add_dependencies(docs_all docs_internal)
-    endif()
+    add_custom_target(docs DEPENDS docs_public docs_internal)
 endif()
