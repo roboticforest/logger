@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 4.0)
 
-set(dvlogger_consumer_source_dir "${dvlogger_source_dir}/tests/install")
-
 file(REMOVE_RECURSE "${dvlogger_install_prefix}" "${dvlogger_consumer_binary_dir}")
 file(MAKE_DIRECTORY "${dvlogger_install_prefix}")
 

@@ -203,7 +203,7 @@ if(BUILD_TESTING)
             COMMAND
                 "${CMAKE_COMMAND}"
                 "-Ddvlogger_binary_dir=${PROJECT_BINARY_DIR}"
-                "-Ddvlogger_source_dir=${PROJECT_SOURCE_DIR}"
+                "-Ddvlogger_consumer_source_dir=${PROJECT_SOURCE_DIR}/tests/install"
                 "-Ddvlogger_install_prefix=${PROJECT_BINARY_DIR}/install-smoke/prefix"
                 "-Ddvlogger_consumer_binary_dir=${PROJECT_BINARY_DIR}/install-smoke/build"
                 "-Ddvlogger_build_config=$<CONFIG>"
