@@ -21,9 +21,15 @@ option(DVLOGGER_BUILD_INTERNAL_DOCS "Build private developer documentation with 
 option(DVLOGGER_ENABLE_MANUAL_TESTS "Enable manual/stress tests in CTest." OFF)
 option(DVLOGGER_ENABLE_INSTALL "Enable install/export rules." ON)
 
-set(DVLOGGER_INSTALL_TARGETS)
 set(DVLOGGER_LIBRARY_SOURCES "${PROJECT_SOURCE_DIR}/logger.cpp")
 set(DVLOGGER_MODULE_FILES "${PROJECT_SOURCE_DIR}/logger.cppm")
+set(DVLOGGER_VERSION_DEFINITIONS
+    DVLOGGER_VERSION_STRING="${PROJECT_VERSION}"
+    DVLOGGER_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+    DVLOGGER_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    DVLOGGER_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+    DVLOGGER_VERSION_TWEAK=${PROJECT_VERSION_TWEAK}
+)
 
 ####################################################################################################
 # Library Targets
@@ -40,13 +46,7 @@ target_sources(dvlogger_shared
         BASE_DIRS "${PROJECT_SOURCE_DIR}"
         FILES ${DVLOGGER_MODULE_FILES}
 )
-target_compile_definitions(dvlogger_shared PUBLIC
-    DVLOGGER_VERSION_STRING="${PROJECT_VERSION}"
-    DVLOGGER_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-    DVLOGGER_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-    DVLOGGER_VERSION_PATCH=${PROJECT_VERSION_PATCH}
-    DVLOGGER_VERSION_TWEAK=${PROJECT_VERSION_TWEAK}
-)
+target_compile_definitions(dvlogger_shared PUBLIC ${DVLOGGER_VERSION_DEFINITIONS})
 target_link_libraries(dvlogger_shared PUBLIC Threads::Threads)
 set_target_properties(dvlogger_shared PROPERTIES
     OUTPUT_NAME "dvlogger"
@@ -54,7 +54,6 @@ set_target_properties(dvlogger_shared PROPERTIES
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 add_library(DV::Logger ALIAS dvlogger_shared)
-list(APPEND DVLOGGER_INSTALL_TARGETS dvlogger_shared)
 
 add_library(dvlogger_static STATIC)
 target_compile_features(dvlogger_static PUBLIC cxx_std_20)
@@ -67,26 +66,13 @@ target_sources(dvlogger_static
         BASE_DIRS "${PROJECT_SOURCE_DIR}"
         FILES ${DVLOGGER_MODULE_FILES}
 )
-target_compile_definitions(dvlogger_static PUBLIC
-    DVLOGGER_VERSION_STRING="${PROJECT_VERSION}"
-    DVLOGGER_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-    DVLOGGER_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-    DVLOGGER_VERSION_PATCH=${PROJECT_VERSION_PATCH}
-    DVLOGGER_VERSION_TWEAK=${PROJECT_VERSION_TWEAK}
-)
+target_compile_definitions(dvlogger_static PUBLIC ${DVLOGGER_VERSION_DEFINITIONS})
 target_link_libraries(dvlogger_static PUBLIC Threads::Threads)
 set_target_properties(dvlogger_static PROPERTIES
     OUTPUT_NAME "dvlogger_static"
     EXPORT_NAME "LoggerStatic"
 )
 add_library(DV::LoggerStatic ALIAS dvlogger_static)
-list(APPEND DVLOGGER_INSTALL_TARGETS dvlogger_static)
-
-add_custom_target(dvlogger
-    DEPENDS
-        dvlogger_shared
-        dvlogger_static
-)
 
 ####################################################################################################
 # Install/Export
@@ -110,7 +96,9 @@ if(DVLOGGER_ENABLE_INSTALL)
         COMPATIBILITY SameMajorVersion
     )
 
-    install(TARGETS ${DVLOGGER_INSTALL_TARGETS}
+    install(TARGETS
+        dvlogger_shared
+        dvlogger_static
         EXPORT DVLoggerTargets
         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
