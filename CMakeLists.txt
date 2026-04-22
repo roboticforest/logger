@@ -207,7 +207,6 @@ if(BUILD_TESTING)
                 "-Ddvlogger_install_prefix=${PROJECT_BINARY_DIR}/install-smoke/prefix"
                 "-Ddvlogger_consumer_binary_dir=${PROJECT_BINARY_DIR}/install-smoke/build"
                 "-Ddvlogger_build_config=$<CONFIG>"
-                "-Ddvlogger_rebuild_before_install=ON"
                 "-Ddvlogger_generator=${CMAKE_GENERATOR}"
                 "-P"
                 "${PROJECT_SOURCE_DIR}/tests/install/installation_smoke_test.cmake"
