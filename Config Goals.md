@@ -1,4 +1,5 @@
 Logger Config Goals:
+0. Code should be: Keep it Stupid Simple, Don't Repeat Yourself, and Novice Friendly!
 1. Build the logger as both a shared and dynamic library for Windows. (Linux will be re-added later.)
 2. Provide extremely simple installation options. Consumers should be able to:
 	a. Use `find_package(DVLogger REQUIRED)`.
@@ -14,4 +15,4 @@ Logger Config Goals:
 	g. Testing that logging from different threads politely share resources.
 	h. Testing that the logger installs easily and correctly.
 4. All build and test targets should be plainly visible to an IDE (like CLion).
-
+5. Docs should be generated as a simple "all or nothing" with the simplest common-place config that can provide both development and user documentation.

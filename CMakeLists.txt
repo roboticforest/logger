@@ -8,7 +8,7 @@
 ####################################################################################################
 
 cmake_minimum_required(VERSION 4.0)
-project(logger VERSION 0.90.0 LANGUAGES CXX)
+project(DVLogger VERSION 0.90.0.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -18,15 +18,10 @@ find_package(Threads REQUIRED)
 # Build Options
 ####################################################################################################
 
-option(DVLOGGER_BUILD_SHARED "Build shared library target." ON)
-option(DVLOGGER_BUILD_STATIC "Build static library target." ON)
 option(DVLOGGER_BUILD_PUBLIC_DOCS "Build API documentation with Doxygen." ON)
 option(DVLOGGER_BUILD_INTERNAL_DOCS "Build private developer documentation with Doxygen." ON)
 option(DVLOGGER_ENABLE_MANUAL_TESTS "Enable manual/stress tests in CTest." OFF)
-
-if(NOT DVLOGGER_BUILD_SHARED AND NOT DVLOGGER_BUILD_STATIC)
-    message(FATAL_ERROR "At least one of DVLOGGER_BUILD_SHARED or DVLOGGER_BUILD_STATIC must be ON.")
-endif()
+option(DVLOGGER_ENABLE_INSTALL "Enable install/export rules." ON)
 
 ####################################################################################################
 # Target Definitions
@@ -60,18 +55,20 @@ function(dvlogger_add_target target_name library_type output_name export_name)
     )
 endfunction()
 
-if(DVLOGGER_BUILD_SHARED)
-    dvlogger_add_target(dvlogger_shared SHARED dvlogger shared)
-    set_target_properties(dvlogger_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
-    add_library(dvlogger::shared ALIAS dvlogger_shared)
-    list(APPEND DVLOGGER_INSTALL_TARGETS dvlogger_shared)
-endif()
+dvlogger_add_target(dvlogger_shared SHARED dvlogger Logger)
+set_target_properties(dvlogger_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+add_library(DV::Logger ALIAS dvlogger_shared)
+list(APPEND DVLOGGER_INSTALL_TARGETS dvlogger_shared)
 
-if(DVLOGGER_BUILD_STATIC)
-    dvlogger_add_target(dvlogger_static STATIC dvlogger_static static)
-    add_library(dvlogger::static ALIAS dvlogger_static)
-    list(APPEND DVLOGGER_INSTALL_TARGETS dvlogger_static)
-endif()
+dvlogger_add_target(dvlogger_static STATIC dvlogger_static LoggerStatic)
+add_library(DV::LoggerStatic ALIAS dvlogger_static)
+list(APPEND DVLOGGER_INSTALL_TARGETS dvlogger_static)
+
+add_custom_target(dvlogger
+    DEPENDS
+        dvlogger_shared
+        dvlogger_static
+)
 
 ####################################################################################################
 # Documentation
@@ -120,6 +117,7 @@ if(DVLOGGER_BUILD_PUBLIC_DOCS)
     )
 
     add_custom_target(docs_public ALL
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${DVLOGGER_DOC_PUBLIC_OUTPUT_DIRECTORY}"
         COMMAND "${DOXYGEN_EXECUTABLE}" "${DVLOGGER_DOC_PUBLIC_CONFIG_OUTPUT}"
         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
         DEPENDS
@@ -147,6 +145,7 @@ if(DVLOGGER_BUILD_PUBLIC_DOCS)
         )
 
         add_custom_target(docs_internal
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "${DVLOGGER_DOC_INTERNAL_OUTPUT_DIRECTORY}"
             COMMAND "${DOXYGEN_EXECUTABLE}" "${DVLOGGER_DOC_INTERNAL_CONFIG_OUTPUT}"
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
             DEPENDS
@@ -171,104 +170,216 @@ endif()
 include(CTest)
 
 if(BUILD_TESTING)
-    if(TARGET dvlogger_static)
-        set(DVLOGGER_TEST_LINK_TARGET dvlogger_static)
-    else()
-        set(DVLOGGER_TEST_LINK_TARGET dvlogger_shared)
-    endif()
+    set(DVLOGGER_TEST_LINK_TARGET dvlogger_static)
+    set(DVLOGGER_UNIT_TEST_TARGETS)
+    set(DVLOGGER_MANUAL_TEST_TARGETS)
 
-    function(dvlogger_add_test target_name source_file test_name test_labels)
+    function(dvlogger_add_ctest_runner target_name)
+        set(options)
+        set(one_value_args LABEL REGEX)
+        set(multi_value_args DEPENDS)
+        cmake_parse_arguments(DVLOGGER_RUNNER "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+
+        set(dvlogger_runner_command
+            "${CMAKE_CTEST_COMMAND}"
+            --output-on-failure
+        )
+        if(DVLOGGER_RUNNER_LABEL)
+            list(APPEND dvlogger_runner_command -L "${DVLOGGER_RUNNER_LABEL}")
+        endif()
+        if(DVLOGGER_RUNNER_REGEX)
+            list(APPEND dvlogger_runner_command -R "${DVLOGGER_RUNNER_REGEX}")
+        endif()
+
+        add_custom_target("${target_name}"
+            COMMAND ${dvlogger_runner_command}
+            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+            USES_TERMINAL
+            DEPENDS
+                ${DVLOGGER_RUNNER_DEPENDS}
+        )
+    endfunction()
+
+    function(dvlogger_escape_semicolons output_var input_value)
+        string(REPLACE ";" "\\;" dvlogger_escaped_value "${input_value}")
+        set("${output_var}" "${dvlogger_escaped_value}" PARENT_SCOPE)
+    endfunction()
+
+    function(dvlogger_add_cpp_test target_name source_file test_group test_labels)
         add_executable("${target_name}" "${source_file}")
         target_compile_features("${target_name}" PRIVATE cxx_std_20)
         target_link_libraries("${target_name}" PRIVATE "${DVLOGGER_TEST_LINK_TARGET}")
-        add_test(NAME "${test_name}" COMMAND "${target_name}")
-        set_tests_properties("${test_name}" PROPERTIES LABELS "${test_labels}")
+        add_test(
+            NAME "${target_name}"
+            COMMAND
+                "${CMAKE_COMMAND}"
+                "-Ddvlogger_binary_dir=${PROJECT_BINARY_DIR}"
+                "-Ddvlogger_test_target=${target_name}"
+                "-Ddvlogger_test_executable=$<TARGET_FILE:${target_name}>"
+                "-Ddvlogger_build_config=$<CONFIG>"
+                "-Ddvlogger_env_include=${DVLOGGER_TEST_ENV_INCLUDE}"
+                "-Ddvlogger_env_lib=${DVLOGGER_TEST_ENV_LIB}"
+                "-Ddvlogger_env_libpath=${DVLOGGER_TEST_ENV_LIBPATH}"
+                "-P"
+                "${PROJECT_SOURCE_DIR}/tests/run_built_test.cmake"
+        )
+        set_tests_properties("${target_name}" PROPERTIES LABELS "${test_group};${test_labels}")
+
+        if(test_group STREQUAL "manual")
+            list(APPEND DVLOGGER_MANUAL_TEST_TARGETS "${target_name}")
+            set(DVLOGGER_MANUAL_TEST_TARGETS "${DVLOGGER_MANUAL_TEST_TARGETS}" PARENT_SCOPE)
+        else()
+            list(APPEND DVLOGGER_UNIT_TEST_TARGETS "${target_name}")
+            set(DVLOGGER_UNIT_TEST_TARGETS "${DVLOGGER_UNIT_TEST_TARGETS}" PARENT_SCOPE)
+        endif()
+
+        dvlogger_add_ctest_runner(
+            "run_${target_name}"
+            REGEX "${target_name}"
+            DEPENDS "${target_name}"
+        )
     endfunction()
 
-    dvlogger_add_test(
+    dvlogger_escape_semicolons(DVLOGGER_TEST_ENV_INCLUDE "$ENV{INCLUDE}")
+    dvlogger_escape_semicolons(DVLOGGER_TEST_ENV_LIB "$ENV{LIB}")
+    dvlogger_escape_semicolons(DVLOGGER_TEST_ENV_LIBPATH "$ENV{LIBPATH}")
+
+    dvlogger_add_cpp_test(
         dvlogger_smoke_test
-        "${PROJECT_SOURCE_DIR}/tests/dvlogger_smoke_test.cpp"
-        dvlogger.smoke
-        "unit;smoke"
+        "${PROJECT_SOURCE_DIR}/tests/logging_smoke_test.cpp"
+        unit
+        "smoke"
     )
-    dvlogger_add_test(
+    dvlogger_add_cpp_test(
         dvlogger_format_test
-        "${PROJECT_SOURCE_DIR}/tests/logger_format_tests.cpp"
-        dvlogger.format
-        "unit;format"
+        "${PROJECT_SOURCE_DIR}/tests/format_tests.cpp"
+        unit
+        "format"
     )
-    dvlogger_add_test(
+    dvlogger_add_cpp_test(
         dvlogger_stream_test
-        "${PROJECT_SOURCE_DIR}/tests/logger_stream_tests.cpp"
-        dvlogger.stream
-        "unit;stream"
+        "${PROJECT_SOURCE_DIR}/tests/stream_tests.cpp"
+        unit
+        "stream"
     )
-    dvlogger_add_test(
+    dvlogger_add_cpp_test(
         dvlogger_thread_test
-        "${PROJECT_SOURCE_DIR}/tests/logger_thread_tests.cpp"
-        dvlogger.thread
-        "unit;thread"
+        "${PROJECT_SOURCE_DIR}/tests/simple_threading_tests.cpp"
+        unit
+        "thread"
     )
-    dvlogger_add_test(
+    dvlogger_add_cpp_test(
         dvlogger_failure_mode_test
-        "${PROJECT_SOURCE_DIR}/tests/logger_failure_mode_tests.cpp"
-        dvlogger.failure_mode
-        "unit;failure_mode"
+        "${PROJECT_SOURCE_DIR}/tests/failure_mode_tests.cpp"
+        unit
+        "failure_mode"
     )
 
     if(DVLOGGER_ENABLE_MANUAL_TESTS)
-        dvlogger_add_test(
+        dvlogger_add_cpp_test(
             dvlogger_stress_manual_test
-            "${PROJECT_SOURCE_DIR}/tests/manual/dvlogger_stress_manual_test.cpp"
-            dvlogger.manual.stress
-            "manual;stress"
+            "${PROJECT_SOURCE_DIR}/tests/manual/threading_stress_manual_test.cpp"
+            manual
+            "stress"
         )
-        dvlogger_add_test(
+        dvlogger_add_cpp_test(
             dvlogger_dead_stream_manual_test
-            "${PROJECT_SOURCE_DIR}/tests/manual/dvlogger_dead_stream_manual_test.cpp"
-            dvlogger.manual.dead_stream
-            "manual;failure_mode"
+            "${PROJECT_SOURCE_DIR}/tests/manual/dead_stream_manual_test.cpp"
+            manual
+            "failure_mode"
         )
     endif()
+
+    dvlogger_add_ctest_runner(
+        dvlogger_tests_unit
+        LABEL unit
+        DEPENDS ${DVLOGGER_UNIT_TEST_TARGETS}
+    )
+    add_custom_target(dvlogger_tests_normal DEPENDS dvlogger_tests_unit)
+    dvlogger_add_ctest_runner(
+        dvlogger_tests_manual
+        LABEL manual
+        DEPENDS ${DVLOGGER_MANUAL_TEST_TARGETS}
+    )
+
+    set(DVLOGGER_ALL_TEST_BUILD_TARGETS
+        ${DVLOGGER_UNIT_TEST_TARGETS}
+        ${DVLOGGER_MANUAL_TEST_TARGETS}
+    )
+
+    if(DVLOGGER_ENABLE_INSTALL)
+        add_test(
+            NAME dvlogger_installation_smoke_test
+            COMMAND
+                "${CMAKE_COMMAND}"
+                "-Ddvlogger_binary_dir=${PROJECT_BINARY_DIR}"
+                "-Ddvlogger_source_dir=${PROJECT_SOURCE_DIR}"
+                "-Ddvlogger_install_prefix=${PROJECT_BINARY_DIR}/install-smoke/prefix"
+                "-Ddvlogger_consumer_binary_dir=${PROJECT_BINARY_DIR}/install-smoke/build"
+                "-Ddvlogger_build_config=$<CONFIG>"
+                "-Ddvlogger_rebuild_before_install=ON"
+                "-Ddvlogger_generator=${CMAKE_GENERATOR}"
+                "-Ddvlogger_env_include=${DVLOGGER_TEST_ENV_INCLUDE}"
+                "-Ddvlogger_env_lib=${DVLOGGER_TEST_ENV_LIB}"
+                "-Ddvlogger_env_libpath=${DVLOGGER_TEST_ENV_LIBPATH}"
+                "-P"
+                "${PROJECT_SOURCE_DIR}/tests/install/installation_smoke_test.cmake"
+        )
+        set_tests_properties(dvlogger_installation_smoke_test PROPERTIES LABELS "integration;install")
+
+        dvlogger_add_ctest_runner(
+            run_dvlogger_installation_smoke_test
+            REGEX "dvlogger_installation_smoke_test"
+            DEPENDS dvlogger_shared dvlogger_static
+        )
+        list(APPEND DVLOGGER_ALL_TEST_BUILD_TARGETS dvlogger_shared dvlogger_static)
+    endif()
+
+    dvlogger_add_ctest_runner(
+        dvlogger_tests_all
+        DEPENDS ${DVLOGGER_ALL_TEST_BUILD_TARGETS}
+    )
 endif()
 
 ####################################################################################################
 # Install And Package
 ####################################################################################################
 
-set(DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/dvlogger")
-set(DVLOGGER_PACKAGE_CONFIG_FILE "${PROJECT_BINARY_DIR}/dvlogger-config.cmake")
-set(DVLOGGER_PACKAGE_VERSION_FILE "${PROJECT_BINARY_DIR}/dvlogger-config-version.cmake")
-set(DVLOGGER_PACKAGE_TARGETS_FILE "dvloggerTargets.cmake")
+if(DVLOGGER_ENABLE_INSTALL)
+    set(DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/DVLogger")
+    set(DVLOGGER_PACKAGE_CONFIG_FILE "${PROJECT_BINARY_DIR}/DVLoggerConfig.cmake")
+    set(DVLOGGER_PACKAGE_VERSION_FILE "${PROJECT_BINARY_DIR}/DVLoggerConfigVersion.cmake")
+    set(DVLOGGER_PACKAGE_TARGETS_FILE "DVLoggerTargets.cmake")
 
-configure_package_config_file(
-    "${PROJECT_SOURCE_DIR}/cmake/dvlogger-config.cmake.in"
-    "${DVLOGGER_PACKAGE_CONFIG_FILE}"
-    INSTALL_DESTINATION "${DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR}"
-)
+    configure_package_config_file(
+        "${PROJECT_SOURCE_DIR}/cmake/DVLoggerConfig.cmake.in"
+        "${DVLOGGER_PACKAGE_CONFIG_FILE}"
+        INSTALL_DESTINATION "${DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR}"
+    )
 
-write_basic_package_version_file(
-    "${DVLOGGER_PACKAGE_VERSION_FILE}"
-    VERSION "${PROJECT_VERSION}"
-    COMPATIBILITY SameMajorVersion
-)
+    write_basic_package_version_file(
+        "${DVLOGGER_PACKAGE_VERSION_FILE}"
+        VERSION "${PROJECT_VERSION}"
+        COMPATIBILITY SameMajorVersion
+    )
 
-install(TARGETS ${DVLOGGER_INSTALL_TARGETS}
-    EXPORT dvloggerTargets
-    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    FILE_SET dvlogger_modules DESTINATION "${CMAKE_INSTALL_LIBDIR}/cxx/modules"
-)
+    install(TARGETS ${DVLOGGER_INSTALL_TARGETS}
+        EXPORT DVLoggerTargets
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        FILE_SET dvlogger_modules DESTINATION "${CMAKE_INSTALL_LIBDIR}/cxx/modules"
+    )
 
-install(EXPORT dvloggerTargets
-    FILE "${DVLOGGER_PACKAGE_TARGETS_FILE}"
-    NAMESPACE dvlogger::
-    DESTINATION "${DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR}"
-)
+    install(EXPORT DVLoggerTargets
+        FILE "${DVLOGGER_PACKAGE_TARGETS_FILE}"
+        NAMESPACE DV::
+        DESTINATION "${DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR}"
+    )
 
-install(FILES
-    "${DVLOGGER_PACKAGE_CONFIG_FILE}"
-    "${DVLOGGER_PACKAGE_VERSION_FILE}"
-    DESTINATION "${DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR}"
-)
+    install(FILES
+        "${DVLOGGER_PACKAGE_CONFIG_FILE}"
+        "${DVLOGGER_PACKAGE_VERSION_FILE}"
+        DESTINATION "${DVLOGGER_PACKAGE_CONFIG_INSTALL_DIR}"
+    )
+endif()
