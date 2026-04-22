@@ -135,32 +135,15 @@ if(BUILD_TESTING)
         dvlogger_dead_stream_manual_test
     )
 
-    string(REPLACE ";" "\\;" DVLOGGER_TEST_ENV_INCLUDE "$ENV{INCLUDE}")
-    string(REPLACE ";" "\\;" DVLOGGER_TEST_ENV_LIB "$ENV{LIB}")
-    string(REPLACE ";" "\\;" DVLOGGER_TEST_ENV_LIBPATH "$ENV{LIBPATH}")
-
     function(dvlogger_add_cpp_test target_name source_file test_labels)
         add_executable("${target_name}" "${source_file}")
         target_compile_features("${target_name}" PRIVATE cxx_std_20)
         target_link_libraries("${target_name}" PRIVATE dvlogger_static)
-        add_test(
-            NAME "${target_name}"
-            COMMAND
-                "${CMAKE_COMMAND}"
-                "-Ddvlogger_binary_dir=${PROJECT_BINARY_DIR}"
-                "-Ddvlogger_test_target=${target_name}"
-                "-Ddvlogger_test_executable=$<TARGET_FILE:${target_name}>"
-                "-Ddvlogger_build_config=$<CONFIG>"
-                "-Ddvlogger_env_include=${DVLOGGER_TEST_ENV_INCLUDE}"
-                "-Ddvlogger_env_lib=${DVLOGGER_TEST_ENV_LIB}"
-                "-Ddvlogger_env_libpath=${DVLOGGER_TEST_ENV_LIBPATH}"
-                "-P"
-                "${PROJECT_SOURCE_DIR}/tests/run_built_test.cmake"
-        )
+        add_test(NAME "${target_name}" COMMAND "$<TARGET_FILE:${target_name}>")
         set_tests_properties("${target_name}" PROPERTIES LABELS "${test_labels}")
 
         add_custom_target("run_${target_name}"
-            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -R "^${target_name}$"
+            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>" -R "^${target_name}$"
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
             USES_TERMINAL
             DEPENDS "${target_name}"
@@ -207,7 +190,7 @@ if(BUILD_TESTING)
     endif()
 
     add_custom_target(dvlogger_tests_unit
-        COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -L unit
+        COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>" -L unit
         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
         USES_TERMINAL
         DEPENDS ${DVLOGGER_UNIT_TEST_TARGETS}
@@ -227,16 +210,13 @@ if(BUILD_TESTING)
                 "-Ddvlogger_build_config=$<CONFIG>"
                 "-Ddvlogger_rebuild_before_install=ON"
                 "-Ddvlogger_generator=${CMAKE_GENERATOR}"
-                "-Ddvlogger_env_include=${DVLOGGER_TEST_ENV_INCLUDE}"
-                "-Ddvlogger_env_lib=${DVLOGGER_TEST_ENV_LIB}"
-                "-Ddvlogger_env_libpath=${DVLOGGER_TEST_ENV_LIBPATH}"
                 "-P"
                 "${PROJECT_SOURCE_DIR}/tests/install/installation_smoke_test.cmake"
         )
         set_tests_properties(dvlogger_installation_smoke_test PROPERTIES LABELS "integration;install")
 
         add_custom_target(run_dvlogger_installation_smoke_test
-            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -R "^dvlogger_installation_smoke_test$"
+            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>" -R "^dvlogger_installation_smoke_test$"
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
             USES_TERMINAL
             DEPENDS dvlogger_shared dvlogger_static
@@ -247,13 +227,13 @@ if(BUILD_TESTING)
     if(DVLOGGER_ENABLE_MANUAL_TESTS)
         list(APPEND DVLOGGER_ALL_TEST_TARGETS ${DVLOGGER_MANUAL_TEST_TARGETS})
         add_custom_target(dvlogger_tests_manual
-            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -L manual
+            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>" -L manual
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
             USES_TERMINAL
             DEPENDS ${DVLOGGER_MANUAL_TEST_TARGETS}
         )
         add_custom_target(dvlogger_tests_all
-            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure
+            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>"
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
             USES_TERMINAL
             DEPENDS ${DVLOGGER_ALL_TEST_TARGETS}
@@ -264,7 +244,7 @@ if(BUILD_TESTING)
             USES_TERMINAL
         )
         add_custom_target(dvlogger_tests_all
-            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure
+            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>"
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
             USES_TERMINAL
             DEPENDS ${DVLOGGER_ALL_TEST_TARGETS}

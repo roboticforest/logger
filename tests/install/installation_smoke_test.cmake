@@ -17,17 +17,6 @@ if(DEFINED dvlogger_build_config AND NOT "${dvlogger_build_config}" STREQUAL "")
     set(dvlogger_config_args --config "${dvlogger_build_config}")
 endif()
 
-# Restore compiler environment when CTest is launched without a developer shell.
-if(DEFINED dvlogger_env_include AND NOT "${dvlogger_env_include}" STREQUAL "")
-    set(ENV{INCLUDE} "${dvlogger_env_include}")
-endif()
-if(DEFINED dvlogger_env_lib AND NOT "${dvlogger_env_lib}" STREQUAL "")
-    set(ENV{LIB} "${dvlogger_env_lib}")
-endif()
-if(DEFINED dvlogger_env_libpath AND NOT "${dvlogger_env_libpath}" STREQUAL "")
-    set(ENV{LIBPATH} "${dvlogger_env_libpath}")
-endif()
-
 # Keep the external consumer on the same generator as the producer project.
 set(dvlogger_generator_args)
 if(DEFINED dvlogger_generator AND NOT "${dvlogger_generator}" STREQUAL "")
