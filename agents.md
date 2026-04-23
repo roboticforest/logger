@@ -9,9 +9,11 @@
 
 ## General Working Rules
 
+- Work off of the `main` or `master` branch.
 - Start by understanding the local code and constraints before editing.
-- Preserve existing structure and style unless there is a clear reason to change them.
 - Avoid broad refactors unless they are required to complete the task safely.
+- Plan and split work into small isolated phases. E.g., if a code edit is better if it also included a related refactor/fix, do it in two steps.
+- Preserve existing structure and style unless there is a clear reason to change them.
 - Reuse existing patterns when they are clear and sufficient.
 - Prefer standardized, built-in, or well-established tools over custom solutions when they meet the need.
 - When choosing between options, prefer the one that is easier to read, test, and maintain.
@@ -27,11 +29,12 @@
 ## Code Formatting Rules
 
 - Private class members should be prefixed with an underscore.
-- Use snake_case for variable and function names.
+- Use camelCase for variable and function names.
 - Use PascalCase for class and type names.
 - Use hyphen-case for multi-word file names.
 - Use four spaces for indentation.
 - Prefer `.cpp` and `.hpp` extensions, and `.cppm` for module interfaces.
+- Include units in variable names where applicable (e.g., `time_ms`, or `length_ft`.)
 
 ## Code Documentation Rules
 
