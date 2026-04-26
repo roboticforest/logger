@@ -1,0 +1,7 @@
+function(add_cpp_test target_name source_file test_labels linked_library)
+    add_executable("${target_name}" "${source_file}")
+    target_compile_features("${target_name}" PRIVATE cxx_std_20)
+    target_link_libraries("${target_name}" PRIVATE "${linked_library}")
+    add_test(NAME "${target_name}" COMMAND "$<TARGET_FILE:${target_name}>")
+    set_tests_properties("${target_name}" PROPERTIES LABELS "${test_labels}")
+endfunction()
