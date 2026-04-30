@@ -255,50 +255,63 @@ add_custom_target(all_active_unit_tests
 
 if (ENABLE_DOCS_BUILDING)
     find_package(Doxygen REQUIRED COMPONENTS doxygen)
+    include("${PROJECT_SOURCE_DIR}/cmake/to-doxygen-inputs.cmake")
 
     # Common Docs and Information
     string(TIMESTAMP DOXY_COPYRIGHT_YEAR "%Y")
+    set(DOXY_SHARED_OPTIONS_TEMPLATE_FILE "${PROJECT_SOURCE_DIR}/cmake/Doxyfile.common.in")
+    set(DOXY_SHARED_OPTIONS_GEN_OUTPUT_FILE "${PROJECT_BINARY_DIR}/Doxyfile.common")
     set(DOXY_FOOTER_CONFIG_TEMPLATE_FILE "${PROJECT_SOURCE_DIR}/cmake/DoxygenFooter.html.in")
-    set(DOXY_COMMON_FOOTER_GEN_OUTPUT_FILE "${PROJECT_BINARY_DIR}/DoxygenFooter.html")
+    set(DOXY_FOOTER_GEN_OUTPUT_FILE "${PROJECT_BINARY_DIR}/DoxygenFooter.html")
     set(DOXY_COMMON_MAIN_PAGE "${PROJECT_SOURCE_DIR}/docs/basic-usage.md")
 
     # Public API Docs
-    set(DOXY_PUBLIC_INPUT_FILES "${PROJECT_SOURCE_DIR}/logger.cppm ${PROJECT_SOURCE_DIR}/docs")
+    set(DOXY_PUBLIC_INPUT_FILES
+            "${PROJECT_SOURCE_DIR}/logger.cppm"
+            "${PROJECT_SOURCE_DIR}/docs"
+    )
+    list_to_quoted_arg_str(DOXY_PUBLIC_INPUT_FILES DOXY_PUBLIC_INPUTS)
+
     set(DOXY_PUBLIC_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc/public")
     set(DOXY_PUBLIC_CONFIG_TEMPLATE_FILE "${PROJECT_SOURCE_DIR}/cmake/Doxyfile.public.in")
-    set(PUBLIC_DOXY_CONFIG_GEN_OUTPUT_FILE "${PROJECT_BINARY_DIR}/Doxyfile.docs_public")
+    set(DOXY_PUBLIC_CONFIG_GEN_OUTPUT_FILE "${PROJECT_BINARY_DIR}/Doxyfile.docs_public")
     set(DOXY_PUBLIC_EXCLUDE_SYMBOLS "DV::Logger::Impl")
 
     # Internal Developer Docs
-    set(DOXY_INTERNAL_INPUT_FILES "${DOXY_PUBLIC_INPUT_FILES} ${PROJECT_SOURCE_DIR}/logger.cpp")
+    set(DOXY_INTERNAL_INPUT_FILES
+            ${DOXY_PUBLIC_INPUT_FILES}
+            "${PROJECT_SOURCE_DIR}/logger.cpp"
+    )
+    list_to_quoted_arg_str(DOXY_INTERNAL_INPUT_FILES DOXY_INTERNAL_INPUTS)
     set(DOXY_INTERNAL_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/doc/internal")
     set(DOXY_INTERNAL_CONFIG_TEMPLATE_FILE "${PROJECT_SOURCE_DIR}/cmake/Doxyfile.internal.in")
-    set(INTERNAL_DOXY_CONFIG_GEN_OUTPUT_FILE "${PROJECT_BINARY_DIR}/Doxyfile.docs_internal")
+    set(DOXY_INTERNAL_CONFIG_GEN_OUTPUT_FILE "${PROJECT_BINARY_DIR}/Doxyfile.docs_internal")
 
     # Generated files.
-    configure_file("${DOXY_PUBLIC_CONFIG_TEMPLATE_FILE}" "${DOXY_COMMON_FOOTER_GEN_OUTPUT_FILE}" @ONLY)
-    configure_file("${DOXY_PUBLIC_CONFIG_TEMPLATE_FILE}" "${PUBLIC_DOXY_CONFIG_GEN_OUTPUT_FILE}" @ONLY)
-    configure_file("${DOXY_INTERNAL_CONFIG_TEMPLATE_FILE}" "${INTERNAL_DOXY_CONFIG_GEN_OUTPUT_FILE}" @ONLY)
+    configure_file("${DOXY_SHARED_OPTIONS_TEMPLATE_FILE}" "${DOXY_SHARED_OPTIONS_GEN_OUTPUT_FILE}" @ONLY)
+    configure_file("${DOXY_FOOTER_CONFIG_TEMPLATE_FILE}" "${DOXY_FOOTER_GEN_OUTPUT_FILE}" @ONLY)
+    configure_file("${DOXY_PUBLIC_CONFIG_TEMPLATE_FILE}" "${DOXY_PUBLIC_CONFIG_GEN_OUTPUT_FILE}" @ONLY)
+    configure_file("${DOXY_INTERNAL_CONFIG_TEMPLATE_FILE}" "${DOXY_INTERNAL_CONFIG_GEN_OUTPUT_FILE}" @ONLY)
 
     # Build targets.
     add_custom_target(docs_public
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${DOXY_PUBLIC_OUTPUT_DIRECTORY}"
-            COMMAND "${DOXYGEN_EXECUTABLE}" "${PUBLIC_DOXY_CONFIG_GEN_OUTPUT_FILE}"
+            COMMAND "${DOXYGEN_EXECUTABLE}" "${DOXY_PUBLIC_CONFIG_GEN_OUTPUT_FILE}"
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
             DEPENDS
             "${DOXY_PUBLIC_CONFIG_TEMPLATE_FILE}"
-            "${DOXY_PUBLIC_INPUT_FILES}"
+            ${DOXY_PUBLIC_INPUT_FILES}
             COMMENT "Generating docs_public documentation with Doxygen"
             VERBATIM
     )
 
     add_custom_target(docs_internal
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${DOXY_INTERNAL_OUTPUT_DIRECTORY}"
-            COMMAND "${DOXYGEN_EXECUTABLE}" "${INTERNAL_DOXY_CONFIG_GEN_OUTPUT_FILE}"
+            COMMAND "${DOXYGEN_EXECUTABLE}" "${DOXY_INTERNAL_CONFIG_GEN_OUTPUT_FILE}"
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
             DEPENDS
             "${DOXY_INTERNAL_CONFIG_TEMPLATE_FILE}"
-            "${DOXY_INTERNAL_INPUT_FILES}"
+            ${DOXY_INTERNAL_INPUT_FILES}
             COMMENT "Generating docs_internal documentation with Doxygen"
             VERBATIM
     )

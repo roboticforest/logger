@@ -12,7 +12,7 @@ EXTRACT_LOCAL_CLASSES  = YES
 HIDE_IN_BODY_DOCS      = NO
 INTERNAL_DOCS          = YES
 
-INPUT                  = @DOXY_INTERNAL_INPUT_FILES@
+INPUT                  = @DOXY_INTERNAL_INPUTS@
 
 HAVE_DOT               = YES
 CLASS_GRAPH            = YES
