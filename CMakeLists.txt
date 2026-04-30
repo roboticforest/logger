@@ -156,31 +156,31 @@ if (BUILD_TESTING)
 
     add_cpp_test(
             simple_smoke_test
-            "${PROJECT_SOURCE_DIR}/tests/logging_smoke_test.cpp"
+            "${PROJECT_SOURCE_DIR}/tests/logging-smoke-test.cpp"
             "unit;smoke"
             dvlogger_static
     )
     add_cpp_test(
             output_format_test
-            "${PROJECT_SOURCE_DIR}/tests/format_tests.cpp"
+            "${PROJECT_SOURCE_DIR}/tests/format-tests.cpp"
             "unit;format"
             dvlogger_static
     )
     add_cpp_test(
             stream_split_test
-            "${PROJECT_SOURCE_DIR}/tests/stream_tests.cpp"
+            "${PROJECT_SOURCE_DIR}/tests/stream-tests.cpp"
             "unit;stream"
             dvlogger_static
     )
     add_cpp_test(
             threading_test
-            "${PROJECT_SOURCE_DIR}/tests/simple_threading_tests.cpp"
+            "${PROJECT_SOURCE_DIR}/tests/simple-threading-tests.cpp"
             "unit;thread"
             dvlogger_static
     )
     add_cpp_test(
             failure_mode_test
-            "${PROJECT_SOURCE_DIR}/tests/failure_mode_tests.cpp"
+            "${PROJECT_SOURCE_DIR}/tests/failure-mode-tests.cpp"
             "unit;failure_mode"
             dvlogger_static
     )
@@ -188,13 +188,13 @@ if (BUILD_TESTING)
     if (ENABLE_MANUAL_TESTS_BUILDING)
         add_cpp_test(
                 manual_stress_test
-                "${PROJECT_SOURCE_DIR}/tests/manual/threading_stress_manual_test.cpp"
+                "${PROJECT_SOURCE_DIR}/tests/manual/threading-stress-manual-test.cpp"
                 "manual;stress"
                 dvlogger_static
         )
         add_cpp_test(
                 manual_deleted_stream_test
-                "${PROJECT_SOURCE_DIR}/tests/manual/dead_stream_manual_test.cpp"
+                "${PROJECT_SOURCE_DIR}/tests/manual/dead-stream-manual-test.cpp"
                 "manual;failure_mode"
                 dvlogger_static
         )
@@ -220,7 +220,7 @@ if (BUILD_TESTING)
                 "-Ddvlogger_build_config=$<CONFIG>"
                 "-Ddvlogger_generator=${CMAKE_GENERATOR}"
                 "-P"
-                "${PROJECT_SOURCE_DIR}/tests/install/installation_smoke_test.cmake"
+                "${PROJECT_SOURCE_DIR}/tests/install/installation-smoke-test.cmake"
         )
         set_tests_properties(installation_smoke_test PROPERTIES LABELS "integration;install")
         list(APPEND ALL_ACTIVE_TESTS_LIST dvlogger_shared dvlogger_static)
