@@ -255,7 +255,7 @@ add_custom_target(all_active_unit_tests
 
 if (ENABLE_DOCS_BUILDING)
     find_package(Doxygen REQUIRED COMPONENTS doxygen)
-    include("${PROJECT_SOURCE_DIR}/cmake/to-doxygen-inputs.cmake")
+    include("${PROJECT_SOURCE_DIR}/cmake/list-to-quoted-arg-str.cmake")
 
     # Common Docs and Information
     string(TIMESTAMP DOXY_COPYRIGHT_YEAR "%Y")
