@@ -1,0 +1,77 @@
+EXCLUDE_PATTERNS       = */.git/* */.svn/* */.hg/* */CMakeFiles/* */_CPack_Packages/* DartConfiguration.tcl CMakeLists.txt CMakeCache.txt
+
+# Project Config
+
+PROJECT_NAME           = "@PROJECT_NAME@"
+PROJECT_NUMBER         = "@PROJECT_VERSION@"
+PROJECT_BRIEF          = "@PROJECT_DESCRIPTION@"
+
+OUTPUT_LANGUAGE        = English
+FULL_PATH_NAMES        = NO
+
+MARKDOWN_SUPPORT       = YES
+MARKDOWN_STRICT        = YES
+
+BUILTIN_STL_SUPPORT    = YES
+DISTRIBUTE_GROUP_DOC   = YES
+INLINE_SIMPLE_STRUCTS  = YES
+
+# Build Config
+
+HIDE_UNDOC_NAMESPACES  = NO
+SORT_MEMBERS_CTORS_1ST = YES
+
+# Doxygen Configuration: Warnings
+
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_IF_INCOMPLETE_DOC = YES
+WARN_NO_PARAMDOC       = YES
+WARN_IF_UNDOC_ENUM_VAL = NO
+WARN_AS_ERROR          = NO
+
+# Doxygen Configuration: Input
+
+USE_MDFILE_AS_MAINPAGE = @DOXY_COMMON_MAIN_PAGE@
+
+# Doxygen Configuration: Browsing
+    # Nothing set. CLang parsing options available here.
+
+# Doxygen Configuration: Class Indexing
+	# Nothing set.
+
+# Doxygen Configuration: HTML Output
+
+HTML_FOOTER            = @DOXY_FOOTER_GEN_OUTPUT_FILE@
+FULL_SIDEBAR           = YES
+OBFUSCATE_EMAILS       = YES
+HTML_FORMULA_FORMAT    = SVG
+	# MathJax options available here.
+
+# Doxygen Configuration: LaTeX Output
+
+GENERATE_LATEX         = NO
+
+# Doxygen Configuration: RTF Output
+# Doxygen Configuration: Man Page Output
+# Doxygen Configuration: XML Output
+# Doxygen Configuration: DocBook Output
+# Doxygen Configuration: AutoGen Definitions
+# Doxygen Configuration: SQLite 3
+# Doxygen Configuration: Perl Module
+	# Nothing set. All unused.
+
+# Doxygen Configuration: C Preprocessor
+
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = NO
+EXPAND_ONLY_PREDEF     = NO
+SEARCH_INCLUDES        = YES
+SKIP_FUNCTION_MACROS   = YES
+
+# Doxygen Configuration: Diagram Generators
+
+HIDE_UNDOC_RELATIONS   = NO
+

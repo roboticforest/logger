@@ -5,8 +5,8 @@
   <ul>
     $navpath
     <li class="footer">$generatedby <a href="https://www.doxygen.org/index.html"><img class="footer" src="$relpath^doxygen.svg" width="104" height="31" alt="doxygen"/></a> $doxygenversion </li>
-    <li class="footer">@DVLOGGER_DOC_LICENSE_TEXT@</li>
-    <li class="footer">@DVLOGGER_DOC_COPYRIGHT_TEXT@</li>
+    <li class="footer">Copyright © @DOXY_COPYRIGHT_YEAR@ David Vitez & DV::Logger contributors.</li>
+    <li class="footer">Licensed under Mozilla Public License, v. 2.0. <a href=\"https://mozilla.org/MPL/2.0/\">mozilla.org</a></li>
   </ul>
 </div>
 <!--END GENERATE_TREEVIEW-->
