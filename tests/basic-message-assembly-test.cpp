@@ -4,19 +4,23 @@ import logger;
 #include <string>
 #include <vector>
 
-#include "test_support.hpp"
+#include "test-support.hpp"
 
-int main() {
+int main(const int argc, char* argv[]) {
     using dvlogger_test::expect;
     using dvlogger_test::message_payload;
     using dvlogger_test::split_lines;
+    using dvlogger_test::OutputForwarder;
 
     std::ostringstream captured;
-    DV::Logger log("FormatTest", captured);
+    DV::Logger log("MessageAssembly", captured);
 
     log.info("SingleMessage");
     log.info("Many", 5, 3.14, 'x');
     log.info("Version", DV::Logger::Version::string);
+
+    const OutputForwarder output_forwarder(argc, argv, captured);
+    output_forwarder.forward_output();
 
     const std::vector<std::string> lines = split_lines(captured.str());
     bool ok = true;
@@ -27,5 +31,6 @@ int main() {
     ok &= expect(message_payload(lines[1]) == "Many 5 3.14 x", "Variadic payload spacing mismatch.");
     ok &= expect(message_payload(lines[2]) == std::string("Version ") + std::string(DV::Logger::Version::string),
                  "Version payload mismatch.");
+
     return ok ? 0 : 1;
 }

@@ -5,7 +5,7 @@ import logger;
 #include <iostream>
 #include <string>
 
-#include "test_support.hpp"
+#include "test-support.hpp"
 
 namespace {
 
