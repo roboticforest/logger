@@ -4,7 +4,7 @@ import logger;
 #include <sstream>
 #include <string>
 #include <thread>
-#include "../test_support.hpp"
+#include "../test-support.hpp"
 
 namespace {
 

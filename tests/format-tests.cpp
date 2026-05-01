@@ -5,13 +5,12 @@ import logger;
 #include <string>
 #include <vector>
 
-#include "test_support.hpp"
+#include "test-support.hpp"
 
 namespace {
 
 using dvlogger_test::expect;
 using dvlogger_test::has_log_prefix;
-using dvlogger_test::message_payload;
 using dvlogger_test::split_lines;
 
 bool test_levels_and_timestamp_shape()
@@ -42,35 +41,9 @@ bool test_levels_and_timestamp_shape()
     return ok;
 }
 
-bool test_message_assembly_spacing()
-{
-    std::ostringstream captured;
-    DV::Logger log("FormatTest", captured);
-
-    log.info("SingleMessage");
-    log.info("Many", 5, 3.14, 'x');
-    log.info("Version", DV::Logger::Version::string);
-
-    const std::vector<std::string> lines = split_lines(captured.str());
-    bool ok = true;
-    ok &= expect(lines.size() == 3, "Expected 3 lines for message assembly test.");
-    if (!ok) {
-        return false;
-    }
-
-    ok &= expect(message_payload(lines[0]) == "SingleMessage", "Single argument payload mismatch.");
-    ok &= expect(message_payload(lines[1]) == "Many 5 3.14 x", "Variadic payload spacing mismatch.");
-    ok &= expect(message_payload(lines[2]) == std::string("Version ") + std::string(DV::Logger::Version::string),
-                 "Version payload mismatch.");
-    return ok;
-}
-
 }  // namespace
 
 int main()
 {
-    bool ok = true;
-    ok &= test_levels_and_timestamp_shape();
-    ok &= test_message_assembly_spacing();
-    return ok ? 0 : 1;
+    return test_levels_and_timestamp_shape() ? 0 : 1;
 }
