@@ -144,6 +144,7 @@ if (BUILD_TESTING)
 
     set(UNIT_TESTS_LIST
             simple_smoke_test
+            basic_message_assembly_test
             output_format_test
             stream_split_test
             threading_test
@@ -158,6 +159,12 @@ if (BUILD_TESTING)
             simple_smoke_test
             "${PROJECT_SOURCE_DIR}/tests/logging-smoke-test.cpp"
             "unit;smoke"
+            dvlogger_static
+    )
+    add_cpp_test(
+            basic_message_assembly_test
+            "${PROJECT_SOURCE_DIR}/tests/basic-message-assembly-test.cpp"
+            "unit;format"
             dvlogger_static
     )
     add_cpp_test(
