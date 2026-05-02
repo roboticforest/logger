@@ -145,7 +145,7 @@ if (BUILD_TESTING)
     set(UNIT_TESTS_LIST
             simple_smoke_test
             basic_message_assembly_test
-            output_format_test
+            log_levels_test
             stream_split_test
             threading_test
             failure_mode_test
@@ -168,8 +168,8 @@ if (BUILD_TESTING)
             dvlogger_static
     )
     add_cpp_test(
-            output_format_test
-            "${PROJECT_SOURCE_DIR}/tests/format-tests.cpp"
+            log_levels_test
+            "${PROJECT_SOURCE_DIR}/tests/log-levels-test.cpp"
             "unit;format"
             dvlogger_static
     )
