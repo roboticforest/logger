@@ -161,12 +161,26 @@ namespace dvlogger_test {
     }
 
 
+    /**
+     * @brief Escapes text so it can be matched literally inside a regular expression.
+     * @param text The raw text to escape for regex use.
+     * @return A string where regex-special characters and whitespace are backslash-escaped.
+     */
     inline std::string regex_escape(const std::string_view text) {
         static const std::regex re(R"([-[\]{}()*+?.,\^$|#\s])");
         return std::regex_replace(std::string(text), re, R"(\$&)");
     }
 
-
+    /**
+     * @brief Checks whether a log line begins with the expected logger header.
+     * @param line The complete formatted log line to inspect.
+     * @param logger_name The expected logger name inside the header.
+     * @param level_name The expected log level label inside the header.
+     * @return `true` when the line begins with a matching timestamp, logger name,
+     * and level label, otherwise `false`.
+     * @details This helper validates the formatted prefix up to the message payload
+     * delimiter and requires the full timestamp format emitted by the logger.
+     */
     inline bool has_log_prefix(
         const std::string& line,
         std::string_view logger_name,
@@ -174,7 +188,7 @@ namespace dvlogger_test {
         const std::string escaped_name = regex_escape(logger_name);
         const std::string escaped_level = regex_escape(level_name);
         const std::regex pattern(
-            "^\\[[^\\]]*\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}:\\d{9}\\] \\["
+            R"(^\[[^\]]*\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}:\d{9}\] \[)"
             + escaped_name + ":" + escaped_level + "\\]\\t");
         return std::regex_search(line, pattern);
     }

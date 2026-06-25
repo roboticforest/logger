@@ -15,7 +15,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(DVLogger
-        VERSION 0.90.0.0
+        VERSION 0.91.0.0
         DESCRIPTION "A simple C++ logging utility library."
         HOMEPAGE_URL "https://github.com/roboticforest/logger"
         LANGUAGES CXX

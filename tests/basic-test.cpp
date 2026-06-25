@@ -1,6 +1,7 @@
 import logger;
 
 #include <array>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -30,24 +31,24 @@ int main(const int argc, char* argv[]) {
     log.debug("Single string literal argument.");
     log.error("Single string literal argument.");
     log.fatal("Single string literal argument.");
-    log.info ("Single string literal argument.");
+    log.info("Single string literal argument.");
     log.trace("Single string literal argument.");
-    log.warn ("Single string literal argument.");
+    log.warn("Single string literal argument.");
 
     log.debug("Many", "string literals", "passed in", "all", "together.");
     log.error("Many", "string literals", "passed in", "all", "together.");
     log.fatal("Many", "string literals", "passed in", "all", "together.");
-    log.info ("Many", "string literals", "passed in", "all", "together.");
+    log.info("Many", "string literals", "passed in", "all", "together.");
     log.trace("Many", "string literals", "passed in", "all", "together.");
-    log.warn ("Many", "string literals", "passed in", "all", "together.");
+    log.warn("Many", "string literals", "passed in", "all", "together.");
 
     std::string message = "Various types: ";
     log.debug(message, 5, 3.14f, 'a', "b c", &message, true, false);
     log.error(message, 5, 3.14f, 'a', "b c", &message, true, false);
     log.fatal(message, 5, 3.14f, 'a', "b c", &message, true, false);
-    log.info (message, 5, 3.14f, 'a', "b c", &message, true, false);
+    log.info(message, 5, 3.14f, 'a', "b c", &message, true, false);
     log.trace(message, 5, 3.14f, 'a', "b c", &message, true, false);
-    log.warn (message, 5, 3.14f, 'a', "b c", &message, true, false);
+    log.warn(message, 5, 3.14f, 'a', "b c", &message, true, false);
 
     const OutputForwarder output_forwarder(argc, argv, captured);
     output_forwarder.forward_output();
@@ -56,40 +57,39 @@ int main(const int argc, char* argv[]) {
     bool ok = true;
     ok &= expect(lines.size() == (LEVEL_NAMES.size() * 3), "Expected 18 formatted log lines.");
     if(!ok) { return 1; }
-    return 0;
 
-    // Unfinished and broken block to verify the content of each message.
-    // It should check that the overall format is correct, and that the
-    // expected messages are correct.
+    for(std::size_t line_idx = 0; line_idx < lines.size(); ++line_idx) {
+        const std::regex mixed_types_message_pattern(
+            R"(^Various types:  5 3\.14 a b c (0x)?[0-9A-Fa-f]+ 1 0$)"
+        );
+        constexpr std::array<std::string_view, 2> expected_messages = {
+            "Single string literal argument.",
+            "Many string literals passed in all together."
+        };
+        const std::string& line = lines[line_idx];
+        const std::string_view level_name = LEVEL_NAMES[line_idx % LEVEL_NAMES.size()];
+        const std::size_t message_idx = line_idx / LEVEL_NAMES.size();
+        const std::string level_label(level_name);
+        const std::string payload = message_payload(line);
 
-    // Verifying that a memory address was output correctly, or that the
-    // timestamps in the header are correct, should be done with some
-    // flexibility and not simple string comparisons.
+        ok &= expect(
+            has_log_prefix(line, "BasicTest", level_name),
+            "Prefix/timestamp mismatch for line " + std::to_string(line_idx) + " (" + level_label + ")."
+        );
 
-    // TODO: Finish this verification block. On hold until timestamps are fixed.
+        if(message_idx < expected_messages.size()) {
+            ok &= expect(
+                payload == expected_messages[message_idx],
+                "Payload mismatch for line " + std::to_string(line_idx) + " (" + level_label + ")."
+            );
+            continue;
+        }
 
-    //
-    //
-    // std::size_t line_idx = 0;
-    // const auto expect_group = [&](const std::string& expected_payload, const std::string& group_name) {
-    //     for(const std::string_view level_name : LEVEL_NAMES) {
-    //         const std::string& line = lines[line_idx];
-    //         const std::string level_label(level_name);
-    //         ok &= expect(
-    //             has_log_prefix(line, "BasicTest", level_name),
-    //             group_name + " prefix/timestamp mismatch for " + level_label + "."
-    //         );
-    //         ok &= expect(
-    //             message_payload(line) == expected_payload,
-    //             group_name + " payload mismatch for " + level_label + "."
-    //         );
-    //         ++line_idx;
-    //     }
-    // };
-    //
-    // expect_group(single_message, "Single-message");
-    // expect_group(many_messages, "Many-message");
-    // expect_group(mixed_types_message, "Mixed-types");
-    //
-    // return ok ? 0 : 1;
+        ok &= expect(
+            std::regex_match(payload, mixed_types_message_pattern),
+            "Mixed-type payload format mismatch for line " + std::to_string(line_idx) + " (" + level_label + ")."
+        );
+    }
+
+    return ok ? 0 : 1;
 }

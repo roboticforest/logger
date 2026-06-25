@@ -1,9 +1,5 @@
 Library Version 1.0 Checklist
 
-Each line is +(1/9) to the minor version.
-Each "Bug" adds +1 to the patch (until next increment of minor).
-Each "Tweak" adds +1 to the tweak (until next increment of minor).
-
 [X] Print to any supplied output stream (console or file).
 [X] Print the name of the logger.
 [X] Print the logging level.
