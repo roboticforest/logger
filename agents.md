@@ -9,8 +9,12 @@
 
 ## General Working Rules
 
-- Do not work directly on the `main` or `master` branch. Create a new branch for each goal.
 - Start by understanding the local code and constraints before editing.
+
+- Do not do normal development work directly on `main` or `master`.
+- If currently on `main` or `master`, create a work branch before editing or committing.
+- Do not create extra branches unnecessarily when already on the correct work branch.
+- Direct merges into `main` are allowed when the user explicitly asks for them.
 
 - Plan and split work into small isolated phases:
   - Build solutions incrementally. Add the smallest useful piece, test or validate it, then continue.
