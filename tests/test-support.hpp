@@ -173,12 +173,8 @@ namespace dvlogger_test {
         std::string_view level_name) {
         const std::string escaped_name = regex_escape(logger_name);
         const std::string escaped_level = regex_escape(level_name);
-        // BUG: On some Windows builds, `std::strftime(..., "%Z %F %T", ...)` currently fails to produce
-        // date/time text in logger headers and only the nanosecond suffix is emitted (e.g. "[:123456789]").
-        // Temporary workaround: accept both the intended full timestamp and the known Windows fallback so
-        // baseline behavior tests remain stable during Milestone 2 refactoring. Remove this once fixed.
         const std::regex pattern(
-            "^\\[([^\\]]*\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}|):\\d{9}\\] \\["
+            "^\\[[^\\]]*\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}:\\d{9}\\] \\["
             + escaped_name + ":" + escaped_level + "\\]\\t");
         return std::regex_search(line, pattern);
     }

@@ -7,12 +7,12 @@
 module;
 
 #include <chrono>
-#include <ctime>
+#include <format>
 #include <functional>
-#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -84,26 +84,13 @@ namespace DV {
 
         void buildHeader(LogLevel level)
         {
-            // Get the current time.
-            // By default, the time is represented in nanoseconds, but adding in the duration_cast helps future-proof
-            // the code a bit.
-            auto curTimeNanosecondPrecision = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                    std::chrono::system_clock::now().time_since_epoch()).count();
-
-            // Format the time as human readable.
-            // "%F %T" --> "%Y-%m-%d %H:%M:%S" --> "TZONE 2019-08-23 13:42:58\0" (26 chars)
-            char timeStr[26] = {0};
-            std::time_t curTimeSecondPrecision = curTimeNanosecondPrecision / 1000000000; // Deliberate integer rounding.
-            std::strftime(timeStr, sizeof(timeStr), "%Z %F %T", std::localtime(&curTimeSecondPrecision));
+            const auto current_time = std::chrono::floor<std::chrono::nanoseconds>(std::chrono::system_clock::now());
+            const auto seconds_time = std::chrono::floor<std::chrono::seconds>(current_time);
+            const auto nanosecond_part = std::chrono::duration_cast<std::chrono::nanoseconds>(current_time - seconds_time).count();
+            const std::chrono::zoned_time local_time{std::chrono::current_zone(), seconds_time};
 
             // Finally, print the time stamp.
-            buffer << '['
-                << timeStr
-                << ':'
-                << std::setw(9) << std::right << std::setfill('0')
-                << (curTimeNanosecondPrecision - curTimeSecondPrecision * 1000000000)
-                << ']';
-            buffer << ' ';
+            std::format_to(std::ostreambuf_iterator<char>(buffer), "[{:%Z %F %T}:{:09}] ", local_time, nanosecond_part);
 
             // Append logger name and level.
             buffer << '[';
