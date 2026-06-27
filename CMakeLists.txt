@@ -142,16 +142,6 @@ endif ()
 if (BUILD_TESTING)
     include("${PROJECT_SOURCE_DIR}/cmake/add-logger-test.cmake")
 
-    set(UNIT_TESTS_LIST
-            simple_smoke_test
-            basic_test
-            stream_split_test
-            threading_test
-            failure_mode_test
-            threading_stress_test
-            dead_stream_test
-    )
-
     add_logger_test(simple_smoke_test "logging-smoke-test")
     add_logger_test(basic_test "basic-test")
     add_logger_test(stream_split_test "stream-tests")
@@ -161,14 +151,6 @@ if (BUILD_TESTING)
     add_logger_test(dead_stream_test "dead-stream-test")
 
     set_tests_properties(dead_stream_test PROPERTIES WILL_FAIL TRUE)
-
-    add_custom_target(base_unit_tests
-            COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>" -L unit
-            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
-            USES_TERMINAL
-            DEPENDS ${UNIT_TESTS_LIST}
-    )
-    set(ALL_ACTIVE_TESTS_LIST ${UNIT_TESTS_LIST})
 
     if (BUILD_INSTALLATION_FILES)
         # This test installs the library and configures a separate consumer project.
@@ -186,17 +168,9 @@ if (BUILD_TESTING)
                 "${PROJECT_SOURCE_DIR}/tests/install/installation-smoke-test.cmake"
         )
         set_tests_properties(installation_smoke_test PROPERTIES LABELS "integration;install")
-        list(APPEND ALL_ACTIVE_TESTS_LIST dvlogger_shared dvlogger_static)
     endif ()
 
 endif ()
-
-add_custom_target(all_active_unit_tests
-        COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>"
-        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
-        USES_TERMINAL
-        DEPENDS ${ALL_ACTIVE_TESTS_LIST}
-)
 
 ########################################################################
 # Docs
