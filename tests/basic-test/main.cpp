@@ -7,7 +7,7 @@ import logger;
 #include <string_view>
 #include <vector>
 
-#include "test-support.hpp"
+#include "../test-support.hpp"
 
 constexpr std::array<std::string_view, 6> LEVEL_NAMES = {
     "DEBUG",

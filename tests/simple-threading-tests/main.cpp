@@ -6,7 +6,7 @@ import logger;
 #include <thread>
 #include <vector>
 
-#include "test-support.hpp"
+#include "../test-support.hpp"
 
 namespace {
 

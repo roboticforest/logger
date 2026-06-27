@@ -156,31 +156,31 @@ if (BUILD_TESTING)
 
     add_cpp_test(
             simple_smoke_test
-            "${PROJECT_SOURCE_DIR}/tests/logging-smoke-test.cpp"
+            "${PROJECT_SOURCE_DIR}/tests/logging-smoke-test/main.cpp"
             "unit;smoke"
             dvlogger_static
     )
     add_cpp_test(
             basic_test
-            "${PROJECT_SOURCE_DIR}/tests/basic-test.cpp"
+            "${PROJECT_SOURCE_DIR}/tests/basic-test/main.cpp"
             "unit;format"
             dvlogger_static
     )
     add_cpp_test(
             stream_split_test
-            "${PROJECT_SOURCE_DIR}/tests/stream-tests.cpp"
+            "${PROJECT_SOURCE_DIR}/tests/stream-tests/main.cpp"
             "unit;stream"
             dvlogger_static
     )
     add_cpp_test(
             threading_test
-            "${PROJECT_SOURCE_DIR}/tests/simple-threading-tests.cpp"
+            "${PROJECT_SOURCE_DIR}/tests/simple-threading-tests/main.cpp"
             "unit;thread"
             dvlogger_static
     )
     add_cpp_test(
             failure_mode_test
-            "${PROJECT_SOURCE_DIR}/tests/failure-mode-tests.cpp"
+            "${PROJECT_SOURCE_DIR}/tests/failure-mode-tests/main.cpp"
             "unit;failure_mode"
             dvlogger_static
     )
@@ -188,13 +188,13 @@ if (BUILD_TESTING)
     if (ENABLE_MANUAL_TESTS_BUILDING)
         add_cpp_test(
                 manual_stress_test
-                "${PROJECT_SOURCE_DIR}/tests/manual/threading-stress-manual-test.cpp"
+                "${PROJECT_SOURCE_DIR}/tests/threading-stress-test/main.cpp"
                 "manual;stress"
                 dvlogger_static
         )
         add_cpp_test(
                 manual_deleted_stream_test
-                "${PROJECT_SOURCE_DIR}/tests/manual/dead-stream-manual-test.cpp"
+                "${PROJECT_SOURCE_DIR}/tests/dead-stream-test/main.cpp"
                 "manual;failure_mode"
                 dvlogger_static
         )
