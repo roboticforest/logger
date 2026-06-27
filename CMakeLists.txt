@@ -28,7 +28,6 @@ include(CTest)
 find_package(Threads REQUIRED)
 
 option(ENABLE_DOCS_BUILDING "Enable building of Doxygen documentation." ON)
-option(ENABLE_MANUAL_TESTS_BUILDING "Enable building and running manual/stress tests in CTest." ON)
 option(BUILD_INSTALLATION_FILES "Create CMake config files for consumers." ON)
 
 set(SRC_FILES "${PROJECT_SOURCE_DIR}/logger.cpp")
@@ -149,10 +148,8 @@ if (BUILD_TESTING)
             stream_split_test
             threading_test
             failure_mode_test
-    )
-    set(MANUAL_TESTS_LIST
-            manual_stress_test
-            manual_deleted_stream_test
+            threading_stress_test
+            dead_stream_test
     )
 
     add_logger_test(simple_smoke_test "logging-smoke-test")
@@ -160,11 +157,10 @@ if (BUILD_TESTING)
     add_logger_test(stream_split_test "stream-tests")
     add_logger_test(threading_test "simple-threading-tests")
     add_logger_test(failure_mode_test "failure-mode-tests")
+    add_logger_test(threading_stress_test "threading-stress-test")
+    add_logger_test(dead_stream_test "dead-stream-test")
 
-    if (ENABLE_MANUAL_TESTS_BUILDING)
-        add_logger_test(manual_stress_test "threading-stress-test")
-        add_logger_test(manual_deleted_stream_test "dead-stream-test")
-    endif ()
+    set_tests_properties(dead_stream_test PROPERTIES WILL_FAIL TRUE)
 
     add_custom_target(base_unit_tests
             COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>" -L unit
@@ -192,20 +188,6 @@ if (BUILD_TESTING)
         list(APPEND ALL_ACTIVE_TESTS_LIST dvlogger_shared dvlogger_static)
     endif ()
 
-    if (ENABLE_MANUAL_TESTS_BUILDING)
-        list(APPEND ALL_ACTIVE_TESTS_LIST ${MANUAL_TESTS_LIST})
-        add_custom_target(manual_unit_tests
-                COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure -C "$<CONFIG>" -L manual
-                WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
-                USES_TERMINAL
-                DEPENDS ${MANUAL_TESTS_LIST}
-        )
-    else ()
-        add_custom_target(manual_unit_tests
-                COMMAND "${CMAKE_COMMAND}" -E echo "Manual tests are disabled."
-                USES_TERMINAL
-        )
-    endif ()
 endif ()
 
 add_custom_target(all_active_unit_tests
