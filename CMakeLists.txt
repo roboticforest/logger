@@ -171,6 +171,7 @@ if (BUILD_TESTING)
     set(ALL_ACTIVE_TESTS_LIST ${UNIT_TESTS_LIST})
 
     if (BUILD_INSTALLATION_FILES)
+        # This test installs the library and configures a separate consumer project.
         add_test(
                 NAME installation_smoke_test
                 COMMAND
