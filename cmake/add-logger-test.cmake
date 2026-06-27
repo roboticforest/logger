@@ -5,7 +5,7 @@
 # test_label_list: Semicolon-separated CTest labels to assign to the test.
 # linked_library_target: Library target that the test executable is built and run against.
 
-function(add_cpp_test test_target_name test_src_file test_label_list linked_library_target)
+function(add_logger_test test_target_name test_src_file test_label_list linked_library_target)
     add_executable("${test_target_name}" "${test_src_file}")
     target_link_libraries("${test_target_name}" PRIVATE "${linked_library_target}")
     add_test(NAME "${test_target_name}" COMMAND "$<TARGET_FILE:${test_target_name}>")

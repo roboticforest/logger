@@ -140,7 +140,7 @@ endif ()
 ########################################################################
 
 if (BUILD_TESTING)
-    include("${PROJECT_SOURCE_DIR}/cmake/add-cpp-test.cmake")
+    include("${PROJECT_SOURCE_DIR}/cmake/add-logger-test.cmake")
 
     set(UNIT_TESTS_LIST
             simple_smoke_test
@@ -154,31 +154,31 @@ if (BUILD_TESTING)
             manual_deleted_stream_test
     )
 
-    add_cpp_test(
+    add_logger_test(
             simple_smoke_test
             "${PROJECT_SOURCE_DIR}/tests/logging-smoke-test/main.cpp"
             "unit;smoke"
             dvlogger_static
     )
-    add_cpp_test(
+    add_logger_test(
             basic_test
             "${PROJECT_SOURCE_DIR}/tests/basic-test/main.cpp"
             "unit;format"
             dvlogger_static
     )
-    add_cpp_test(
+    add_logger_test(
             stream_split_test
             "${PROJECT_SOURCE_DIR}/tests/stream-tests/main.cpp"
             "unit;stream"
             dvlogger_static
     )
-    add_cpp_test(
+    add_logger_test(
             threading_test
             "${PROJECT_SOURCE_DIR}/tests/simple-threading-tests/main.cpp"
             "unit;thread"
             dvlogger_static
     )
-    add_cpp_test(
+    add_logger_test(
             failure_mode_test
             "${PROJECT_SOURCE_DIR}/tests/failure-mode-tests/main.cpp"
             "unit;failure_mode"
@@ -186,13 +186,13 @@ if (BUILD_TESTING)
     )
 
     if (ENABLE_MANUAL_TESTS_BUILDING)
-        add_cpp_test(
+        add_logger_test(
                 manual_stress_test
                 "${PROJECT_SOURCE_DIR}/tests/threading-stress-test/main.cpp"
                 "manual;stress"
                 dvlogger_static
         )
-        add_cpp_test(
+        add_logger_test(
                 manual_deleted_stream_test
                 "${PROJECT_SOURCE_DIR}/tests/dead-stream-test/main.cpp"
                 "manual;failure_mode"
