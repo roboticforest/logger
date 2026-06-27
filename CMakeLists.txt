@@ -33,6 +33,7 @@ option(BUILD_INSTALLATION_FILES "Create CMake config files for consumers." ON)
 
 set(SRC_FILES "${PROJECT_SOURCE_DIR}/logger.cpp")
 set(SRC_MODULE_FILES "${PROJECT_SOURCE_DIR}/logger.cppm")
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 ########################################################################
 # Library Targets
@@ -154,50 +155,15 @@ if (BUILD_TESTING)
             manual_deleted_stream_test
     )
 
-    add_logger_test(
-            simple_smoke_test
-            "${PROJECT_SOURCE_DIR}/tests/logging-smoke-test/main.cpp"
-            "unit;smoke"
-            dvlogger_static
-    )
-    add_logger_test(
-            basic_test
-            "${PROJECT_SOURCE_DIR}/tests/basic-test/main.cpp"
-            "unit;format"
-            dvlogger_static
-    )
-    add_logger_test(
-            stream_split_test
-            "${PROJECT_SOURCE_DIR}/tests/stream-tests/main.cpp"
-            "unit;stream"
-            dvlogger_static
-    )
-    add_logger_test(
-            threading_test
-            "${PROJECT_SOURCE_DIR}/tests/simple-threading-tests/main.cpp"
-            "unit;thread"
-            dvlogger_static
-    )
-    add_logger_test(
-            failure_mode_test
-            "${PROJECT_SOURCE_DIR}/tests/failure-mode-tests/main.cpp"
-            "unit;failure_mode"
-            dvlogger_static
-    )
+    add_logger_test(simple_smoke_test "logging-smoke-test")
+    add_logger_test(basic_test "basic-test")
+    add_logger_test(stream_split_test "stream-tests")
+    add_logger_test(threading_test "simple-threading-tests")
+    add_logger_test(failure_mode_test "failure-mode-tests")
 
     if (ENABLE_MANUAL_TESTS_BUILDING)
-        add_logger_test(
-                manual_stress_test
-                "${PROJECT_SOURCE_DIR}/tests/threading-stress-test/main.cpp"
-                "manual;stress"
-                dvlogger_static
-        )
-        add_logger_test(
-                manual_deleted_stream_test
-                "${PROJECT_SOURCE_DIR}/tests/dead-stream-test/main.cpp"
-                "manual;failure_mode"
-                dvlogger_static
-        )
+        add_logger_test(manual_stress_test "threading-stress-test")
+        add_logger_test(manual_deleted_stream_test "dead-stream-test")
     endif ()
 
     add_custom_target(base_unit_tests
