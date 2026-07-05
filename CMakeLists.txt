@@ -15,7 +15,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(DVLogger
-        VERSION 0.92.0.0
+        VERSION 0.93.0.0
         DESCRIPTION "A simple C++ logging utility library."
         HOMEPAGE_URL "https://github.com/roboticforest/logger"
         LANGUAGES CXX
@@ -24,6 +24,7 @@ project(DVLogger
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 include(CTest)
+include(cmake/msvc-header-units.cmake)
 
 find_package(Threads REQUIRED)
 
@@ -90,6 +91,9 @@ set_target_properties(dvlogger_static PROPERTIES
         EXPORT_NAME "LoggerStatic"
 )
 add_library(DV::LoggerStatic ALIAS dvlogger_static)
+
+add_msvc_header_units(dvlogger_shared PUBLIC sstream)
+add_msvc_header_units(dvlogger_static PUBLIC sstream)
 
 ########################################################################
 # Install/Export

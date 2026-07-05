@@ -8,12 +8,13 @@ module;
 
 #include <iostream>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
 
 export module logger;
+
+export import <sstream>;
 
 export namespace DV {
 
